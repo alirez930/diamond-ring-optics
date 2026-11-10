@@ -1,0 +1,464 @@
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1, viewport-fit=cover&quot;&gt;
+&lt;meta name=&quot;theme-color&quot; content=&quot;#030405&quot;&gt;
+&lt;meta name=&quot;description&quot; content=&quot;An independent browser recreation of JIN2&#39;s ASCII diamond ring animation.&quot;&gt;
+&lt;title&gt;Diamond Ring — JIN2 ASCII&lt;/title&gt;
+&lt;style&gt;
+  :root { color-scheme: dark; --pink:#ff8bb8; --silver:#dce4f2; --muted:rgba(204,211,226,.48); }
+  * { box-sizing:border-box; }
+  html,body { width:100%; height:100%; margin:0; overflow:hidden; background:#030405; }
+  body { color:#e8edf6; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .stage { position:relative; width:100%; height:100%; min-height:320px; overflow:hidden; isolation:isolate; background:#030405; }
+  #ring { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  .vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 48%,transparent 33%,rgba(0,0,0,.23) 78%,rgba(0,0,0,.55) 130%); }
+  .timecode { position:absolute; top:max(18px,env(safe-area-inset-top)); right:clamp(18px,4vw,52px); display:flex; align-items:center; gap:9px; color:rgba(255,159,196,.82); font-size:10px; letter-spacing:.09em; text-shadow:0 0 12px rgba(255,125,178,.24); pointer-events:none; }
+  .timecode::before { content:&quot;&quot;; width:5px; height:5px; border-radius:50%; background:var(--pink); box-shadow:0 0 10px var(--pink); }
+  .signature { position:absolute; left:clamp(18px,4vw,52px); bottom:max(20px,env(safe-area-inset-bottom)); color:rgba(193,201,218,.43); font-size:9px; line-height:1.85; letter-spacing:.06em; pointer-events:none; }
+  .signature .name { color:rgba(218,225,239,.63); }
+  .signature .stats { color:rgba(193,201,218,.43); }
+  .controls { position:absolute; right:clamp(15px,3vw,36px); bottom:max(17px,env(safe-area-inset-bottom)); display:flex; align-items:center; gap:7px; opacity:.52; transition:opacity .25s ease; }
+  .controls:hover,.controls:focus-within { opacity:1; }
+  .control { width:34px; height:34px; display:grid; place-items:center; border:1px solid rgba(204,215,237,.17); border-radius:50%; color:rgba(227,234,246,.82); background:rgba(9,12,18,.45); backdrop-filter:blur(8px); cursor:pointer; padding:0; transition:background .2s,border-color .2s,transform .2s; }
+  .control:hover { background:rgba(35,43,58,.72); border-color:rgba(213,225,246,.4); transform:translateY(-2px); }
+  .control:active { transform:scale(.94); }
+  .control svg { width:14px;height:14px; }
+  .control:focus-visible { outline:2px solid #c5d9ff; outline-offset:3px; }
+  .hint { position:absolute; left:50%; bottom:max(25px,env(safe-area-inset-bottom)); transform:translateX(-50%); color:rgba(188,199,219,.22); font-size:8px; letter-spacing:.19em; white-space:nowrap; pointer-events:none; }
+  .toast { position:absolute; top:max(55px,calc(env(safe-area-inset-top) + 45px)); left:50%; transform:translate(-50%,-8px); padding:8px 12px; border:1px solid rgba(203,216,240,.15); border-radius:30px; background:rgba(10,13,20,.82); color:#dce4f1; font-size:10px; opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; backdrop-filter:blur(10px); }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  @media(max-width:600px) {
+    .signature { font-size:8px; bottom:max(17px,env(safe-area-inset-bottom)); }
+    .controls { right:14px; bottom:max(14px,env(safe-area-inset-bottom)); gap:5px; }
+    .control { width:31px;height:31px; }
+    .hint { display:none; }
+  }
+  @media(prefers-reduced-motion:reduce) { .controls,.control,.toast { transition:none; } }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;main class=&quot;stage&quot; id=&quot;stage&quot; aria-label=&quot;Three-dimensional ASCII diamond ring&quot;&gt;
+  &lt;canvas id=&quot;ring&quot; aria-label=&quot;A sparkling three-dimensional diamond ring made from light and ASCII characters&quot;&gt;&lt;/canvas&gt;
+  &lt;div class=&quot;vignette&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;timecode&quot;&gt;&lt;span id=&quot;clock&quot;&gt;t 00.00s&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;signature&quot;&gt;
+    &lt;div class=&quot;name&quot;&gt;JIN2 · @jin_22ee · 2026&lt;/div&gt;
+    &lt;div id=&quot;metrics&quot;&gt;rotation 000.00° &amp;nbsp; glints 0000&lt;/div&gt;
+    &lt;div id=&quot;letters&quot;&gt;letters 00000&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;hint&quot;&gt;DRAG TO ORBIT &amp;nbsp; · &amp;nbsp; SPACE PAUSE &amp;nbsp; · &amp;nbsp; R RESTART&lt;/div&gt;
+  &lt;nav class=&quot;controls&quot; aria-label=&quot;Animation controls&quot;&gt;
+    &lt;button class=&quot;control&quot; id=&quot;pause&quot; title=&quot;Pause / resume (Space)&quot; aria-label=&quot;Pause animation&quot;&gt;
+      &lt;svg id=&quot;pauseIcon&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot;&gt;&lt;path d=&quot;M8 5v14M16 5v14&quot;/&gt;&lt;/svg&gt;
+    &lt;/button&gt;
+    &lt;button class=&quot;control&quot; id=&quot;restart&quot; title=&quot;Restart (R)&quot; aria-label=&quot;Restart animation&quot;&gt;
+      &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M4 11a8 8 0 1 1 2.4 6.2&quot;/&gt;&lt;path d=&quot;M4 4v7h7&quot;/&gt;&lt;/svg&gt;
+    &lt;/button&gt;
+    &lt;button class=&quot;control&quot; id=&quot;save&quot; title=&quot;Save frame (S)&quot; aria-label=&quot;Save frame&quot;&gt;
+      &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4&quot;/&gt;&lt;/svg&gt;
+    &lt;/button&gt;
+    &lt;button class=&quot;control&quot; id=&quot;fullscreen&quot; title=&quot;Fullscreen (F)&quot; aria-label=&quot;Toggle fullscreen&quot;&gt;
+      &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot;&gt;&lt;path d=&quot;M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4&quot;/&gt;&lt;/svg&gt;
+    &lt;/button&gt;
+  &lt;/nav&gt;
+  &lt;div class=&quot;toast&quot; id=&quot;toast&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+&lt;/main&gt;
+&lt;script&gt;
+(() => {
+  &#39;use strict&#39;;
+
+  // Browser port of the original point-cloud geometry and lighting.
+  const TAU = Math.PI * 2;
+  const LOOP = 20, DRAW_START = .3, DRAW_END = 5.6, TURN = 12, FLOOR = -.78;
+  let CELL_W = 6, CELL_H = 9, FONT_PX = 10;
+  const BAND = 0, PRONG = 1, GEM = 2, GLINT = 3, FIRE_P = 4, FIRE_B = 5, FIRE_G = 6, DUST = 7, REFLECT = 8, STAR = 9;
+  const POOLS = [&#39;1il!;:&#39;, &#39;rtfjcvxz=+&#39;, &#39;aeoun0{}[]&lt;&gt;&#39;, &#39;08B$#&amp;%Q&#39;];
+  const GLYPHS = [...new Set((&#39; .,:~+*^01|/\\-_#()x&#39; + POOLS.join(&#39;&#39;)).split(&#39;&#39;))];
+  const GLYPH_MAP = new Map(GLYPHS.map((c, i) => [c, i]));
+  const COLORS = [&#39;#9298a7&#39;,&#39;#bdc4d1&#39;,&#39;#e4e9f3&#39;,&#39;#ffffff&#39;,&#39;#fffaff&#39;,&#39;#ffb0ce&#39;,&#39;#a9d6ff&#39;,&#39;#ffe4a8&#39;,&#39;#858b9d&#39;,&#39;#aeb9cc&#39;];
+  const stage = document.getElementById(&#39;stage&#39;);
+  const canvas = document.getElementById(&#39;ring&#39;);
+  const ctx = canvas.getContext(&#39;2d&#39;, {alpha:false, desynchronized:true});
+  const clockLabel = document.getElementById(&#39;clock&#39;);
+  const metricsLabel = document.getElementById(&#39;metrics&#39;);
+  const lettersLabel = document.getElementById(&#39;letters&#39;);
+  const pauseBtn = document.getElementById(&#39;pause&#39;);
+  const pauseIcon = document.getElementById(&#39;pauseIcon&#39;);
+  const toastEl = document.getElementById(&#39;toast&#39;);
+
+  const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+  const smooth = x => { x=clamp(x,0,1); return x*x*(3-2*x); };
+  const norm = (x,y,z) => { const q=Math.hypot(x,y,z)||1; return [x/q,y/q,z/q]; };
+  const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const cross = (a,b) => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  function rng(seed) {
+    let x=seed&gt;&gt;&gt;0;
+    return () => { x+=0x6D2B79F5; let t=x; t=Math.imul(t^(t&gt;&gt;&gt;15),t|1); t^=t+Math.imul(t^(t&gt;&gt;&gt;7),t|61); return ((t^(t&gt;&gt;&gt;14))&gt;&gt;&gt;0)/4294967296; };
+  }
+
+  let cols=120, rows=100, aspect=1, cssW=720, cssH=900, dpr=1;
+  let frameCanvas, frameCtx, trailCanvas, trailCtx;
+  let frameImage;
+  let paused=false, elapsed=0, lastStamp=0, lastRender=0, toastTimer=0;
+  let manualYaw=0, manualPitch=0, drag=null;
+  let geometry, sparks, dustSeeds, starSeeds, burstSeeds, haloSeeds;
+  let gridPart, gridDepth, gridLum, gridTag, gridGlyph, particleDepth;
+
+  function pushPoint(store, p, n, kind, face=0) {
+    store.p.push(p[0],p[1],p[2]);
+    const nn=norm(n[0],n[1],n[2]);
+    store.n.push(nn[0],nn[1],nn[2]);
+    store.kind.push(kind); store.face.push(face);
+  }
+
+  function makeGeometry() {
+    const s={p:[],n:[],kind:[],face:[],order:[],part:[]};
+    const R=.55, tube=.065;
+    // Dense sampled torus: 520 x 44, matching the source geometry.
+    for(let i=0;i&lt;520;i++) {
+      const a=TAU*i/520, ca=Math.cos(a), sa=Math.sin(a);
+      const rr=tube*(1-.35*Math.pow(Math.max(0,sa),6));
+      for(let j=0;j&lt;44;j++) {
+        const b=TAU*j/44, cb=Math.cos(b), sb=Math.sin(b);
+        const nx=ca*cb, ny=sa*cb, nz=sb;
+        pushPoint(s,[ca*R+nx*rr,sa*R+ny*rr,nz*rr*1.5],[nx,ny,nz],BAND,0);
+      }
+    }
+    // Four tapered prongs.
+    for(let i=0;i&lt;4;i++) {
+      const a=TAU*(i+.5)/4;
+      const base=[.08*Math.cos(a),R+.02,.08*Math.sin(a)];
+      const tip=[.265*Math.cos(a),.97,.265*Math.sin(a)];
+      const d=norm(tip[0]-base[0],tip[1]-base[1],tip[2]-base[2]);
+      const side=norm(d[1],-d[0],0), w=norm(...cross(side,d));
+      for(let k=0;k&lt;40;k++) {
+        const u=k/39;
+        for(let j=0;j&lt;12;j++) {
+          const phi=TAU*j/12;
+          const nx=Math.cos(phi)*side[0]+Math.sin(phi)*w[0];
+          const ny=Math.cos(phi)*side[1]+Math.sin(phi)*w[1];
+          const nz=Math.cos(phi)*side[2]+Math.sin(phi)*w[2];
+          const radius=.022;
+          pushPoint(s,[base[0]+(tip[0]-base[0])*u+nx*radius,base[1]+(tip[1]-base[1])*u+ny*radius,base[2]+(tip[2]-base[2])*u+nz*radius],[nx,ny,nz],PRONG,0);
+        }
+      }
+    }
+    // Sixteen-sided brilliant cut, with individually shaded crown, table and pavilion facets.
+    const GY=.88, GR=.25, TY=1, TR=.135, CY=.66;
+    let faceId=1;
+    function triangle(a,b,c,normal) {
+      for(let i=0;i&lt;=15;i++) for(let j=0;j&lt;=15-i;j++) {
+        const u=i/15,v=j/15;
+        const p=[a[0]+(b[0]-a[0])*u+(c[0]-a[0])*v,a[1]+(b[1]-a[1])*u+(c[1]-a[1])*v,a[2]+(b[2]-a[2])*u+(c[2]-a[2])*v];
+        pushPoint(s,p,normal,GEM,faceId);
+      }
+      faceId++;
+    }
+    for(let i=0;i&lt;16;i++) {
+      const a0=TAU*i/16,a1=TAU*(i+1)/16;
+      const g0=[GR*Math.cos(a0),GY,GR*Math.sin(a0)],g1=[GR*Math.cos(a1),GY,GR*Math.sin(a1)];
+      const t0=[TR*Math.cos(a0),TY,TR*Math.sin(a0)],t1=[TR*Math.cos(a1),TY,TR*Math.sin(a1)];
+      const culet=[0,CY,0];
+      let crown=cross([g1[0]-g0[0],g1[1]-g0[1],g1[2]-g0[2]],[t0[0]-g0[0],t0[1]-g0[1],t0[2]-g0[2]]);
+      if(crown[1]&lt;0)crown=crown.map(v=>-v);
+      triangle(g0,g1,t0,crown);
+      triangle(g1,t1,t0,[crown[0],crown[1]*1.15,crown[2]]);
+      let pav=cross([culet[0]-g0[0],culet[1]-g0[1],culet[2]-g0[2]],[g1[0]-g0[0],g1[1]-g0[1],g1[2]-g0[2]]);
+      if(pav[1]&gt;0)pav=pav.map(v=>-v);
+      triangle(g0,g1,culet,pav);
+      triangle([0,TY,0],t0,t1,[0,1,0]);
+    }
+    const count=s.kind.length;
+    const p=new Float32Array(s.p), n=new Float32Array(s.n), kind=new Uint8Array(s.kind), face=new Uint16Array(s.face), order=new Float32Array(count), part=new Int16Array(count);
+    for(let i=0;i&lt;count;i++) {
+      const x=p[i*3],y=p[i*3+1],z=p[i*3+2];
+      if(kind[i]===BAND) order[i]=Math.abs(Math.atan2(Math.sin(Math.atan2(y,x)+Math.PI/2),Math.cos(Math.atan2(y,x)+Math.PI/2)))/Math.PI;
+      else if(kind[i]===PRONG) order[i]=1+(y-R)/(.45)*.25;
+      else order[i]=1.25+(y-CY)/(.34)*.45;
+      part[i]=kind[i]===GEM?10+face[i]:kind[i];
+    }
+    return {p,n,kind,face,order,part,count,maxOrder:1.7};
+  }
+
+  function makeParticles() {
+    const r=rng(13), count=1900;
+    sparks=new Array(count);
+    for(let i=0;i&lt;count;i++) {
+      const vi=Math.floor(r()*geometry.count), a=r()*TAU, speed=.4+.6*r(), up=.5+.9*r();
+      sparks[i]={vi,born:DRAW_START+geometry.order[vi]/geometry.maxOrder*(DRAW_END-DRAW_START),life:.9+.9*r(),a,speed,up,kind:r()};
+    }
+    const rd=rng(5);
+    dustSeeds=Array.from({length:520},()=>({a:rd()*TAU,u:rd(),v:rd(),w:rd()}));
+    const rs=rng(2);
+    starSeeds=Array.from({length:90},()=>({x:rs()*10-5,y:rs()*6-1.5,z:-6,phase:rs()*TAU}));
+    const rb=rng(14);
+    burstSeeds=Array.from({length:700},()=>({a:rb()*TAU,r:rb(),z:(rb()-.5)*.05-.4,phase:rb()*TAU,kind:rb()}));
+    const rh=rng(15);
+    haloSeeds=Array.from({length:900},()=>({a:rh()*TAU,q:rh(),phase:rh()*TAU,orbit:rh()&lt;.5?0:1}));
+  }
+
+  const eye=[0,.85,4.7], target=[0,.22,0];
+  const fwd=norm(target[0]-eye[0],target[1]-eye[1],target[2]-eye[2]);
+  const right=norm(...cross(fwd,[0,1,0]));
+  const up=cross(right,fwd);
+  const viewDir=norm(-fwd[0],-fwd[1],-fwd[2]);
+  const keyLight=norm(0,.8,.6);
+
+  function rotatePoint(x,y,z,yaw,pitch) {
+    const c=Math.cos(yaw),s=Math.sin(yaw);
+    const rx=c*x+s*z, rz=-s*x+c*z;
+    const cp=Math.cos(pitch),sp=Math.sin(pitch);
+    return [rx,cp*y-sp*rz,sp*y+cp*rz];
+  }
+  function rotateNormal(x,y,z,yaw,pitch) { return rotatePoint(x,y,z,yaw,pitch); }
+  function project(x,y,z) {
+    const dx=x-eye[0],dy=y-eye[1],dz=z-eye[2];
+    const cx=dx*right[0]+dy*right[1]+dz*right[2];
+    const cy=dx*up[0]+dy*up[1]+dz*up[2];
+    const cz=dx*fwd[0]+dy*fwd[1]+dz*fwd[2];
+    if(cz&lt;=.2)return null;
+    const sx=(.5+cx/cz*1.45)*cols;
+    const sy=(.5-cy/cz*1.45*aspect)*rows;
+    const ix=sx|0,iy=sy|0;
+    if(ix&lt;0||ix&gt;=cols||iy&lt;0||iy&gt;=rows)return null;
+    return {idx:iy*cols+ix,depth:cz,x:ix,y:iy};
+  }
+
+  function setupGrid() {
+    const n=cols*rows;
+    gridPart=new Int16Array(n); gridDepth=new Float32Array(n); gridLum=new Float32Array(n);
+    gridTag=new Uint8Array(n); gridGlyph=new Uint8Array(n); particleDepth=new Float32Array(n);
+  }
+
+  function clearGrid() {
+    gridPart.fill(-1); gridDepth.fill(99); gridLum.fill(0); gridTag.fill(0); gridGlyph.fill(0); particleDepth.fill(99);
+  }
+
+  function particle(x,y,z,bright,glyph,colorTag,depthBias=0) {
+    const q=project(x,y,z); if(!q||bright&lt;=.02)return;
+    const i=q.idx;
+    if(gridPart[i]&gt;=0 &amp;&amp; gridDepth[i]+depthBias&lt;q.depth)return;
+    if(q.depth+depthBias&gt;=particleDepth[i])return;
+    particleDepth[i]=q.depth+depthBias;
+    gridPart[i]=-2; gridLum[i]=clamp(bright,0,1); gridTag[i]=colorTag;
+    gridGlyph[i]=GLYPH_MAP.get(glyph)||GLYPH_MAP.get(&#39;.&#39;)||1;
+  }
+
+  function drawFrame(t) {
+    clearGrid();
+    const yaw=TAU*Math.max(t-DRAW_END-.6,0)/TURN+manualYaw;
+    const pitch=manualPitch;
+    const cy=Math.cos(yaw),sy=Math.sin(yaw);
+    const rim=norm(Math.cos(t*.9),.5,Math.sin(t*.9));
+    const halfK=norm(keyLight[0]+viewDir[0],keyLight[1]+viewDir[1],keyLight[2]+viewDir[2]);
+    const halfR=norm(rim[0]+viewDir[0],rim[1]+viewDir[1],rim[2]+viewDir[2]);
+    const head=(t-DRAW_START)/(DRAW_END-DRAW_START)*geometry.maxOrder;
+    const flash=1+.8*Math.exp(-Math.pow((t-DRAW_END-.15)/.18,2));
+    let glintCount=0;
+
+    // Opaque point-cloud body with a real per-cell depth buffer.
+    for(let i=0;i&lt;geometry.count;i++) {
+      const k=smooth((head-geometry.order[i])/.06);
+      if(k&lt;.96)continue;
+      const pi=i*3;
+      const pos=rotatePoint(geometry.p[pi],geometry.p[pi+1],geometry.p[pi+2],yaw,pitch);
+      const no=rotateNormal(geometry.n[pi],geometry.n[pi+1],geometry.n[pi+2],yaw,pitch);
+      const q=project(pos[0],pos[1],pos[2]); if(!q)continue;
+      const kind=geometry.kind[i];
+      const diffuse=Math.max(0,dot(no,keyLight));
+      const spec=Math.pow(Math.max(0,dot(no,halfK)),30)+.9*Math.pow(Math.max(0,dot(no,halfR)),24);
+      const metal=kind!==GEM;
+      let shade=metal?.5+.35*diffuse+.9*spec:.8+.2*diffuse+1.4*spec;
+      if(t&gt;DRAW_END&amp;&amp;t&lt;DRAW_END+.45)shade*=flash;
+      let tag=kind;
+      if(!metal&amp;&amp;spec&gt;.18) { const f=(Math.floor(t*7+geometry.face[i])%3); tag=f===0?GLINT:f===1?FIRE_P:FIRE_B; glintCount++; }
+      else if(metal&amp;&amp;spec&gt;.5) { tag=GLINT; glintCount++; }
+      const idx=q.idx;
+      if(q.depth&lt;gridDepth[idx]) {
+        gridDepth[idx]=q.depth; gridLum[idx]=clamp(shade,.12,1.4); gridPart[idx]=geometry.part[i]; gridTag[idx]=tag;
+      }
+    }
+
+    // Soft floor reflection under the metal shank.
+    for(let i=0;i&lt;geometry.count;i+=5) {
+      const k=smooth((head-geometry.order[i])/.06); if(k&lt;.96)continue;
+      if(geometry.kind[i]===GEM)continue;
+      const pi=i*3;
+      const p=rotatePoint(geometry.p[pi],geometry.p[pi+1],geometry.p[pi+2],yaw,pitch);
+      const ry=2*FLOOR-p[1]-.06;
+      particle(p[0],ry,p[2],.13+.09*(.5+.5*Math.sin(i*.013+t*2)),&#39;.&#39;,REFLECT,-.001);
+    }
+
+    // Star field and slowly drifting dust.
+    for(const s of starSeeds) {
+      particle(s.x,s.y,s.z,.08+.12*(.5+.5*Math.sin(t*2+s.phase)),&#39;.&#39;,STAR);
+    }
+    const dustOn=smooth((t-2.7)/1.5);
+    for(const d of dustSeeds) {
+      const a=d.a+t*(.3+.5*d.u), r=.9+.8*d.v, y=((d.w*2.4+t*.08)%2.4)-.8;
+      const tw=(.25+.75*Math.pow(Math.max(0,Math.sin(t*(2+3*d.u)+d.a*6)),4))*dustOn;
+      particle(Math.cos(a)*r,y,Math.sin(a)*r*.7,tw,tw&gt;.7?&#39;*&#39;:&#39;.&#39;,DUST);
+    }
+
+    // The moving writing tip throws sparks with gravity.
+    for(const s of sparks) {
+      const age=t-s.born; if(age&lt;=0||age&gt;=s.life)continue;
+      const pi=s.vi*3;
+      const base=rotatePoint(geometry.p[pi],geometry.p[pi+1],geometry.p[pi+2],yaw,pitch);
+      const vx=Math.cos(s.a)*s.speed,vz=Math.sin(s.a)*s.speed;
+      const x=base[0]+vx*age, y=base[1]+s.up*age-1.1*age*age, z=base[2]+vz*age;
+      const fade=Math.pow(Math.max(0,1-age/s.life),1.3)*(.6+.4*Math.sin(age*30+s.a));
+      particle(x,y,z,fade,s.kind&gt;.7?&#39;*&#39;:(fade&gt;.45?&#39;+&#39;:&#39;.&#39;),s.kind&gt;.7?FIRE_G:DUST);
+    }
+
+    // Expanding light ring when the last facets are written.
+    const burstAge=t-DRAW_END-.1;
+    if(burstAge&gt;=0&amp;&amp;burstAge&lt;=2.2) {
+      const fade=Math.pow(Math.max(0,1-burstAge/2.2),1.5), radius=.85+2.4*(1-Math.exp(-burstAge*2));
+      for(const b of burstSeeds) {
+        const r=radius*(.97+.06*b.r), x=Math.cos(b.a)*r, y=.42+Math.sin(b.a)*r;
+        const tag=b.kind&lt;.25?FIRE_P:b.kind&lt;.45?FIRE_B:b.kind&lt;.6?FIRE_G:GLINT;
+        particle(x,y,b.z,fade*(.55+.45*Math.sin(t*8+b.phase)),b.kind&gt;.6?&#39;*&#39;:&#39;+&#39;,tag);
+      }
+    }
+
+    // Two fine, tilted particle orbits around the completed ring.
+    const haloOn=smooth((t-DRAW_END-.3)/1.5);
+    if(haloOn&gt;0) for(const h of haloSeeds) {
+      const tilt=h.orbit===0?.55:-.55, a=h.a+t*(h.orbit===0?.9:-.7);
+      const x0=Math.cos(a)*1.05,y0=Math.sin(a)*.32,z0=Math.sin(a)*.95;
+      const x=x0*Math.cos(tilt)-y0*Math.sin(tilt), y=x0*Math.sin(tilt)+y0*Math.cos(tilt)+.42;
+      const headGlow=(h.q*37+t*1.3)%1;
+      const glow=haloOn*(.15+.85*Math.max(0,1-headGlow*3))*(.6+.4*Math.sin(t*6+h.phase));
+      particle(x,y,z0,glow,h.q&gt;.5?&#39;.&#39;:&#39;*&#39;,h.q&gt;.5?DUST:FIRE_B);
+    }
+
+    // Turn the silhouette and facet boundaries into ASCII contours.
+    let visibleCount=0;
+    const edgeX=new Int8Array(cols*rows),edgeY=new Int8Array(cols*rows),edge=new Uint8Array(cols*rows);
+    for(let y=0;y&lt;rows;y++) for(let x=0;x&lt;cols;x++) {
+      const i=y*cols+x, part=gridPart[i];
+      if(part&lt;0)continue;
+      let gx=0,gy=0,isEdge=false;
+      for(let dy=-1;dy&lt;=1;dy++)for(let dx=-1;dx&lt;=1;dx++) {
+        if(dx===0&amp;&amp;dy===0)continue;
+        const xx=x+dx,yy=y+dy,ni=(xx&lt;0||xx&gt;=cols||yy&lt;0||yy&gt;=rows)?-1:gridPart[yy*cols+xx];
+        if(ni&lt;0||(ni!==part&amp;&amp;gridDepth[yy*cols+xx]&gt;gridDepth[i]+.02)) {gx+=dx;gy+=dy;if(dx===0||dy===0)isEdge=true;}
+      }
+      if(isEdge) {edge[i]=1;edgeX[i]=gx;edgeY[i]=gy;}
+    }
+
+    // Glyph choice follows luminance, while each material keeps its own silver/ice tint.
+    frameCtx.clearRect(0,0,cssW,cssH);
+    frameCtx.textAlign=&#39;center&#39;; frameCtx.textBaseline=&#39;middle&#39;; frameCtx.font=`${FONT_PX}px Consolas, &quot;Courier New&quot;, monospace`;
+    frameCtx.shadowBlur=0;
+    for(let y=0;y&lt;rows;y++)for(let x=0;x&lt;cols;x++) {
+      const i=y*cols+x,tag=gridTag[i];
+      if(gridPart[i]===-1)continue;
+      const lum=clamp(gridLum[i],0,1.2);
+      let ch;
+      if(gridPart[i]===-2) ch=tag===FIRE_G?&#39;*&#39;:lum&gt;.68?&#39;+&#39;:&#39;.&#39;;
+      else if(tag&gt;=GLINT&amp;&amp;tag&lt;=FIRE_G)ch=&#39;*&#39;;
+      else if(edge[i]) {
+        const gx=edgeX[i],gy=edgeY[i],ax=Math.abs(gx),ay=Math.abs(gy);
+        ch=ax&gt;2*ay?&#39;|&#39;:ay&gt;2*ax?(gy&gt;0?&#39;_&#39;:&#39;-&#39;):(gx*gy&gt;0?&#39;/&#39;:&#39;\\&#39;);
+      } else {
+        const level=clamp(Math.floor(lum*3.2),0,3),h=(y*7919+x*104729)%9973,pool=POOLS[level];
+        ch=pool[(h+Math.floor(t*4+h%11))%pool.length];
+      }
+      const color=tag===GLINT?COLORS[4]:tag===FIRE_P?COLORS[5]:tag===FIRE_B?COLORS[6]:tag===FIRE_G?COLORS[7]:tag===DUST?COLORS[7]:tag===REFLECT?COLORS[8]:tag===STAR?COLORS[9]:tag===GEM?COLORS[2+clamp(Math.floor(lum*2),0,1)]:tag===PRONG?COLORS[1+clamp(Math.floor(lum*2),0,1)]:COLORS[clamp(Math.floor(lum*3.5),0,3)];
+      frameCtx.globalAlpha=gridPart[i]===-2?clamp(lum,0,1)*.86:clamp(lum,.12,1);
+      frameCtx.fillStyle=color;
+      frameCtx.fillText(ch,x*CELL_W+CELL_W/2,y*CELL_H+CELL_H/2);
+      if(gridPart[i]&gt;=0)visibleCount++;
+    }
+    frameCtx.globalAlpha=1;
+    return {yaw,glintCount,visibleCount};
+  }
+
+  function compose() {
+    trailCtx.globalCompositeOperation=&#39;source-over&#39;;
+    trailCtx.fillStyle=&#39;rgba(0,0,0,.49)&#39;; trailCtx.fillRect(0,0,cssW,cssH);
+    trailCtx.globalCompositeOperation=&#39;lighter&#39;; trailCtx.globalAlpha=.97;
+    trailCtx.drawImage(frameCanvas,0,0,cssW,cssH); trailCtx.globalAlpha=1;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.fillStyle=&#39;#030405&#39;;ctx.fillRect(0,0,cssW,cssH);
+    ctx.save();ctx.globalCompositeOperation=&#39;screen&#39;;ctx.globalAlpha=.32;ctx.filter=&#39;blur(16px)&#39;;ctx.drawImage(trailCanvas,0,0,cssW,cssH);ctx.restore();
+    ctx.save();ctx.globalCompositeOperation=&#39;screen&#39;;ctx.globalAlpha=.34;ctx.filter=&#39;blur(6px)&#39;;ctx.drawImage(trailCanvas,0,0,cssW,cssH);ctx.restore();
+    ctx.globalCompositeOperation=&#39;lighter&#39;;ctx.globalAlpha=.98;ctx.drawImage(trailCanvas,0,0,cssW,cssH);
+    ctx.globalAlpha=1;ctx.globalCompositeOperation=&#39;source-over&#39;;ctx.filter=&#39;none&#39;;
+    const glow=ctx.createRadialGradient(cssW*.5,cssH*.49,cssW*.015,cssW*.5,cssH*.49,Math.max(cssW,cssH)*.58);
+    glow.addColorStop(0,&#39;rgba(140,160,195,.035)&#39;);glow.addColorStop(.58,&#39;rgba(75,90,125,.018)&#39;);glow.addColorStop(1,&#39;rgba(0,0,0,0)&#39;);
+    ctx.fillStyle=glow;ctx.fillRect(0,0,cssW,cssH);
+  }
+
+  function resize() {
+    const rect=stage.getBoundingClientRect();cssW=Math.max(320,rect.width);cssH=Math.max(320,rect.height);
+    dpr=Math.min(window.devicePixelRatio||1,1.5);
+    CELL_W=Math.max(6,cssW/240); CELL_H=CELL_W*1.5; FONT_PX=CELL_W*(10/6);
+    cols=clamp(Math.floor(cssW/CELL_W),64,240);rows=clamp(Math.floor(cssH/CELL_H),60,180);
+    aspect=(cols*CELL_W)/(rows*CELL_H);
+    const w=Math.round(cssW*dpr),h=Math.round(cssH*dpr);
+    canvas.width=w;canvas.height=h;
+    frameCanvas=document.createElement(&#39;canvas&#39;);frameCanvas.width=w;frameCanvas.height=h;
+    trailCanvas=document.createElement(&#39;canvas&#39;);trailCanvas.width=w;trailCanvas.height=h;
+    frameCtx=frameCanvas.getContext(&#39;2d&#39;);trailCtx=trailCanvas.getContext(&#39;2d&#39;);
+    frameCtx.setTransform(dpr,0,0,dpr,0,0);trailCtx.setTransform(dpr,0,0,dpr,0,0);
+    setupGrid();clearTrail();
+  }
+
+  function clearTrail() { if(trailCtx){trailCtx.setTransform(dpr,0,0,dpr,0,0);trailCtx.clearRect(0,0,cssW,cssH);} }
+  function updateHud(t,info) {
+    const deg=((info.yaw/TAU*360)%360+360)%360;
+    clockLabel.textContent=`t ${t.toFixed(2).padStart(5,&#39;0&#39;)}s`;
+    metricsLabel.textContent=`rotation ${deg.toFixed(2).padStart(6,&#39;0&#39;)}°   glints ${String(info.glintCount).padStart(4,&#39;0&#39;)}`;
+    lettersLabel.textContent=`letters ${String(info.visibleCount).padStart(5,&#39;0&#39;)}`;
+  }
+  function render(t) { const info=drawFrame(t);compose();updateHud(t,info); }
+  function showToast(s) { toastEl.textContent=s;toastEl.classList.add(&#39;show&#39;);clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove(&#39;show&#39;),1350); }
+  function setPaused(v) {
+    paused=v;
+    pauseBtn.setAttribute(&#39;aria-label&#39;,paused?&#39;Resume animation&#39;:&#39;Pause animation&#39;);
+    pauseBtn.title=paused?&#39;Resume (Space)&#39;:&#39;Pause (Space)&#39;;
+    pauseIcon.innerHTML=paused?&#39;&lt;path d=&quot;m9 5 10 7-10 7V5Z&quot;/&gt;&#39;:&#39;&lt;path d=&quot;M8 5v14M16 5v14&quot;/&gt;&#39;;
+    if(!paused)lastStamp=0;showToast(paused?&#39;Paused&#39;:&#39;Resumed&#39;);
+  }
+  function restart() { elapsed=0;manualYaw=0;manualPitch=0;clearTrail();render(0);lastStamp=0;showToast(&#39;Animation restarted&#39;); }
+  function save() {
+    try { const a=document.createElement(&#39;a&#39;);a.download=&#39;jin2-diamond-ring-ascii.png&#39;;a.href=canvas.toDataURL(&#39;image/png&#39;);a.click();showToast(&#39;Frame saved&#39;); }
+    catch(e){showToast(&#39;Unable to save in this browser&#39;);}
+  }
+  function fullscreen() { if(!document.fullscreenElement){stage.requestFullscreen?.().catch(()=>showToast(&#39;Fullscreen unavailable&#39;));}else document.exitFullscreen?.(); }
+  function tick(stamp) {
+    requestAnimationFrame(tick);
+    if(!lastStamp)lastStamp=stamp;
+    if(stamp-lastRender&lt;32)return;
+    const dt=Math.min((stamp-lastStamp)/1000,.06);lastStamp=stamp;lastRender=stamp;
+    if(!paused) {
+      elapsed+=dt;
+      if(elapsed&gt;=LOOP){elapsed=0;clearTrail();}
+      render(elapsed);
+    }
+  }
+
+  pauseBtn.addEventListener(&#39;click&#39;,()=>setPaused(!paused));
+  document.getElementById(&#39;restart&#39;).addEventListener(&#39;click&#39;,restart);
+  document.getElementById(&#39;save&#39;).addEventListener(&#39;click&#39;,save);
+  document.getElementById(&#39;fullscreen&#39;).addEventListener(&#39;click&#39;,fullscreen);
+  canvas.addEventListener(&#39;pointerdown&#39;,e=>{if(e.pointerType===&#39;mouse&#39;&amp;&amp;e.button!==0)return;drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture?.(e.pointerId);});
+  canvas.addEventListener(&#39;pointermove&#39;,e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;manualYaw+=dx*.006;manualPitch=clamp(manualPitch+dy*.004,-.48,.48);render(elapsed);});
+  canvas.addEventListener(&#39;pointerup&#39;,()=>{drag=null;});canvas.addEventListener(&#39;pointercancel&#39;,()=>{drag=null;});
+  canvas.addEventListener(&#39;dblclick&#39;,fullscreen);
+  window.addEventListener(&#39;resize&#39;,()=>{resize();render(elapsed);});
+  window.addEventListener(&#39;keydown&#39;,e=>{
+    if(e.target&amp;&amp;[&#39;INPUT&#39;,&#39;TEXTAREA&#39;].includes(e.target.tagName))return;
+    if(e.code===&#39;Space&#39;){e.preventDefault();setPaused(!paused);}else if(e.key.toLowerCase()===&#39;r&#39;)restart();else if(e.key.toLowerCase()===&#39;s&#39;)save();else if(e.key.toLowerCase()===&#39;f&#39;)fullscreen();
+  });
+
+  geometry=makeGeometry();makeParticles();resize();render(0);requestAnimationFrame(tick);
+})();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
