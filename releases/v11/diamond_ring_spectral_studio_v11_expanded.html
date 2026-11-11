@@ -1,0 +1,582 @@
+<!doctype html>
+<!-- Original upstream license and copyright terms; not shown in the animation UI.
+The spectral model uses diamond Sellmeier dispersion, Fresnel interface reflectance and geometric-optics ray transport. The gemstone is a parameterized 57-facet round-brilliant topology with 16 additional girdle closure facets; its proportions approximate a classic round brilliant and are not a scan of a particular stone.
+Reference constants: Peter (1923); Tropf, Thomas & Harris (1995); JHU APL optical properties.
+CIE 1931 2° colour matching uses tabulated 5 nm standard-observer values for 400–700 nm.
+Diamond Ring
+Copyright (c) 2026 JIN2 (@jin_22ee). All rights reserved.
+
+This code is shared for free. You may:
+  - run it on your own computer,
+  - read and study it,
+  - change it for your own personal projects and experiments.
+
+Please do not:
+  - sell it or any modified version of it,
+  - use it or its output in anything commercial
+    (ads, products, client work, monetised videos, NFTs, templates)
+    without written permission from JIN2,
+  - claim the artwork or the code as your own.
+
+If you post something you made with it, please credit @jin_22ee.
+
+This software is provided "as is", without warranty of any kind.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="A 61-band CIE-tabulated spectral ray-transport study of a 57-facet round-brilliant diamond and polished precious-metal ring, with a spherical optical burst.">
+<title>DIAMOND — Spectral Studio V11</title>
+<style>
+:root{color-scheme:dark;background:#000}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}body{display:grid;place-items:center;color:#cbd1df;font-family:Consolas,Menlo,"DejaVu Sans Mono",monospace;user-select:none;-webkit-user-select:none}.stage{position:relative;width:min(100vw,112.5vh);height:min(88.888889vw,100vh);aspect-ratio:9/8;overflow:hidden;background:#000;isolation:isolate}canvas{display:block;width:100%;height:100%;background:transparent;touch-action:none}.controls{position:absolute;right:clamp(10px,2.5vw,28px);bottom:clamp(10px,2.5vw,25px);display:flex;gap:7px;opacity:.18;transition:opacity .25s}.stage:hover .controls,.controls:focus-within{opacity:.9}.control{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid rgba(190,205,230,.2);border-radius:50%;background:rgba(5,8,13,.65);color:#dbe4f3;font:15px/1 monospace;cursor:pointer;backdrop-filter:blur(5px)}.control:hover{background:rgba(30,40,58,.85);border-color:rgba(210,225,250,.55)}.hint{position:absolute;right:clamp(10px,2.5vw,28px);top:clamp(10px,2.5vw,25px);font-size:8px;letter-spacing:.12em;color:rgba(184,196,218,.16);pointer-events:none}.toast{position:absolute;top:12%;left:50%;transform:translate(-50%,-6px);padding:6px 10px;border:1px solid rgba(205,220,244,.18);border-radius:20px;background:rgba(8,11,17,.9);font-size:10px;color:#e2e9f5;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:520px){.controls{opacity:.56}.hint{display:none}}
+.lab-panel{position:absolute;left:clamp(10px,2.5vw,28px);bottom:clamp(12px,2.5vw,25px);width:min(340px,calc(100% - 24px));padding:12px 14px;border:1px solid rgba(175,198,232,.18);border-radius:10px;background:rgba(5,9,16,.90);backdrop-filter:blur(12px);box-shadow:0 12px 44px rgba(0,0,0,.35);font:10px/1.5 ui-monospace,Consolas,monospace;color:#d8e4f6;opacity:0;transform:translateY(7px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:4}
+.lab-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}.lab-kicker{font-size:8px;letter-spacing:.2em;color:#91a9c8}.lab-title{font-size:13px;letter-spacing:.04em;margin:3px 0 9px;color:#f2f6ff}.lab-grid{display:grid;grid-template-columns:1fr auto;gap:4px 12px}.lab-grid span{color:#9eacc2}.lab-grid b{font-weight:600;color:#f0f5ff;font-variant-numeric:tabular-nums}.lab-method{margin-top:10px;padding-top:8px;border-top:1px solid rgba(175,198,232,.13);color:#c4d5ee}.lab-note{margin-top:6px;color:#75849b;font:9px/1.45 ui-sans-serif,system-ui,sans-serif}@media(max-width:520px){.lab-panel{bottom:56px}}
+
+</style>
+</head>
+<body>
+<main class="stage" id="stage" aria-label="Cinematic three-dimensional ASCII diamond ring animation">
+  <canvas id="view" aria-label="A spectral ray-traced brilliant-cut diamond ring made from animated ASCII characters"></canvas>
+  <div class="hint">SPACE PAUSE · R RESTART · S SAVE · DRAG TO ROTATE</div>
+  <nav class="controls" aria-label="Animation controls">
+    <button class="control" id="pause" title="Pause / resume (Space)" aria-label="Pause">Ⅱ</button>
+    <button class="control" id="restart" title="Restart (R)" aria-label="Restart">↻</button>
+    <button class="control" id="save" title="Save PNG (S)" aria-label="Save image">↓</button>
+    <button class="control" id="full" title="Fullscreen (F)" aria-label="Fullscreen">⛶</button>
+    <button class="control" id="lab" title="Optical model" aria-label="Optical model">λ</button>
+  </nav>
+  <aside class="lab-panel" id="labPanel" aria-hidden="true">
+    <div class="lab-kicker">SPECTRAL OPTICS / DIAMOND</div>
+    <div class="lab-title">Light transport model</div>
+    <div class="lab-grid">
+      <span>Refractive index · 587.6 nm</span><b>2.4175</b>
+      <span>Visible dispersion · B–G</span><b>0.0442</b>
+      <span>Critical angle · diamond/air</span><b>24.4°</b>
+      <span>Cut topology</span><b>57 + 16 girdle</b>
+      <span>Color observer</span><b>CIE 1931 · 5 nm</b>
+      <span>Rays per facet</span><b>Adaptive 1–2</b>
+    </div>
+    <div class="lab-method">57 cut facets + 16 closed girdle faces · 61-band Sellmeier dispersion · 57-facet round brilliant · Snell refraction · unpolarized Fresnel · closed-mesh multi-bounce ray tracing · GGX conductor reflections · tabulated CIE XYZ to sRGB</div>
+    <div class="lab-note">Parameterized standard round brilliant: 57 cut facets (1 table, 8 stars, 8 bezels, 16 upper halves, 8 pavilion mains, 16 lower halves) plus 16 separate girdle segments. Proportions: 55% table, 34.5° crown, 40.75° pavilion, 50% star length, 75% lower-girdle length, medium girdle (3% of diameter) and pointed culet. The topology and planes are now explicit and watertight; dimensions remain a representative model, not a scan of a particular stone. CIE 1931 2° colour-matching functions use the published 5 nm standard table from 400–700 nm. Fluorescence, inclusions, stone-specific absorption, full polarization transport, wave interference, measured alloy data and calibrated studio/camera spectra are not modeled.</div>
+  </aside>
+  <div class="toast" id="toast"></div>
+</main>
+<script>
+(()=>{'use strict';
+// Responsive ASCII sampling: 208×117 on phones, 264×150 on larger displays.
+// Each character is rasterized into a 7×11 antialiased glyph cell with deterministic spatial dithering.
+const MOBILE = matchMedia('(max-width: 760px)').matches || matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4;
+const CW=7,CH=11,COLS=MOBILE?208:264,ROWS=MOBILE?117:150,W=COLS*CW,H=ROWS*CH,ASPECT=(COLS*CW)/(ROWS*CH),TAU=Math.PI*2;
+const LOOP=20,BUILD=3.2,DRAW0=.3,DRAW1=5.6,TURN=12,FLOOR=-.78;
+const BAND=0,PRONG=1,GEM=2,GLINT=3,FIRE_R=4,FIRE_B=5,FIRE_G=6,DUST=7,REFL=8,STAR=9,BUBBLE=10,BUBBLE_C=11,BUBBLE_G=12;
+const POOLS=['1il!;:','rtfjcvxz=+','aeoun0{}[]<>','08B$#&%Q'];
+const COLORS=[[214,220,232],[232,236,244],[226,238,255],[255,255,255],[255,170,200],[160,210,255],[255,230,160],[255,214,140],[150,150,165],[120,120,140],[226,244,255],[174,224,255],[255,239,207]];
+const CELL_COUNT=COLS*ROWS;
+const stage=document.getElementById('stage'),view=document.getElementById('view'),out=view.getContext('2d',{alpha:false,desynchronized:true});
+const pauseBtn=document.getElementById('pause'),toastEl=document.getElementById('toast'),labBtn=document.getElementById('lab'),labPanel=document.getElementById('labPanel');
+const frameCanvas=document.createElement('canvas');frameCanvas.width=W;frameCanvas.height=H;const frameCtx=frameCanvas.getContext('2d',{alpha:true});
+const trailCanvas=document.createElement('canvas');trailCanvas.width=W;trailCanvas.height=H;const trailCtx=trailCanvas.getContext('2d');
+const glowA=document.createElement('canvas');glowA.width=W/4;glowA.height=H/4;const glowACtx=glowA.getContext('2d');
+const glowB=document.createElement('canvas');glowB.width=W/8;glowB.height=H/8;const glowBCtx=glowB.getContext('2d');
+const glowFull=document.createElement('canvas');glowFull.width=W;glowFull.height=H;const glowFullCtx=glowFull.getContext('2d');
+let dpr=1,paused=false,time=0,last=0,lastRender=0,drag=null,dragYaw=0,toastTimer=0;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+const norm=(x,y,z)=>{const q=Math.hypot(x,y,z)||1;return [x/q,y/q,z/q]};
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function rng(seed){let x=seed>>>0;return()=>{x+=0x6D2B79F5;let t=x;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+function makeGeometry(){
+ const P=[],N=[],K=[],FACE=[],ORDER=[],PART=[],TRIS=[],FACETS=[];
+ const add=(x,y,z,nx,ny,nz,kind,face=0)=>{const nn=norm(nx,ny,nz);P.push(x,y,z);N.push(...nn);K.push(kind);FACE.push(face)};
+ const TA=34.5*Math.PI/180,PA=40.75*Math.PI/180;
+ const R=.275,tableR=R*.55,gTop=.88825,gBottom=.87175,girdleThickness=gTop-gBottom;
+ const crownHeight=(R-tableR)*Math.tan(TA),tableY=gTop+crownHeight,pavilionDepth=R*Math.tan(PA),culetY=gBottom-pavilionDepth;
+ const starLength=.50,lowerGirdleLength=.75,starR=tableR+(R-tableR)*starLength;
+ const starY=gTop+(R-starR*Math.cos(Math.PI/8))*Math.tan(TA),breakR=R*lowerGirdleLength;
+ const stoneCenter=[0,(tableY+culetY)*.5,0];
+ const upper=Array.from({length:16},(_,j)=>{const a=TAU*j/16;return[R*Math.cos(a),gTop,R*Math.sin(a)]});
+ const lower=Array.from({length:16},(_,j)=>{const a=TAU*j/16;return[R*Math.cos(a),gBottom,R*Math.sin(a)]});
+ const table=Array.from({length:8},(_,i)=>{const a=TAU*i/8;return[tableR*Math.cos(a),tableY,tableR*Math.sin(a)]});
+ const stars=Array.from({length:8},(_,i)=>{const a=TAU*(i+.5)/8;return[starR*Math.cos(a),starY,starR*Math.sin(a)]});
+ // Pavilion break points are placed at 75% of the culet-to-girdle radius.
+ // Their height is solved so each pavilion-main quadrilateral is exactly planar.
+ const breakY=culetY+(gBottom-culetY)*(breakR*Math.cos(Math.PI/8)/R);
+ const breaks=Array.from({length:8},(_,i)=>{const a=TAU*i/8;return[breakR*Math.cos(a),breakY,breakR*Math.sin(a)]});
+ const culet=[0,culetY,0];
+ const faceSamples=16;
+ function registerFacet(name,vertices){
+  const verts=vertices.map(v=>v.slice()),v0=verts[0],v1=verts[1],v2=verts[2];
+  let normal=norm(...cross([v1[0]-v0[0],v1[1]-v0[1],v1[2]-v0[2]],[v2[0]-v0[0],v2[1]-v0[1],v2[2]-v0[2]]));
+  const center=[0,0,0];for(const v of verts){center[0]+=v[0]/verts.length;center[1]+=v[1]/verts.length;center[2]+=v[2]/verts.length}
+  const outward=[center[0]-stoneCenter[0],center[1]-stoneCenter[1],center[2]-stoneCenter[2]];
+  if(dot(normal,outward)<0)normal=normal.map(q=>-q);
+  const id=FACETS.length,triangles=[];
+  for(let k=1;k<verts.length-1;k++){
+   const a=verts[0],b=verts[k],c=verts[k+1];
+   const tri={a:a.slice(),b:b.slice(),c:c.slice(),n:normal.slice(),face:id,name};TRIS.push(tri);triangles.push(tri);
+   for(let j=0;j<=faceSamples;j++)for(let i=0;i<=faceSamples-j;i++){
+    const u=i/faceSamples,v=j/faceSamples;
+    add(a[0]+(b[0]-a[0])*u+(c[0]-a[0])*v,a[1]+(b[1]-a[1])*u+(c[1]-a[1])*v,a[2]+(b[2]-a[2])*u+(c[2]-a[2])*v,...normal,GEM,id);
+   }
+  }
+  // Area-weighted, deterministic surface samples let the optical estimator average
+  // more than one camera ray per facet instead of treating a whole face as a point.
+  const fanAreas=[];let areaTotal=0;
+  for(let k=1;k<verts.length-1;k++){
+   const a=verts[0],b=verts[k],c=verts[k+1],ab=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],ac=[c[0]-a[0],c[1]-a[1],c[2]-a[2]],cr=cross(ab,ac);
+   const ar=Math.hypot(cr[0],cr[1],cr[2])*.5;fanAreas.push({a,b,c,area:ar});areaTotal+=ar;
+  }
+  function polygonSample(q,r1,r2){
+   let pick=q*areaTotal,tri=fanAreas[fanAreas.length-1];
+   for(const item of fanAreas){pick-=item.area;if(pick<=0){tri=item;break}}
+   const root=Math.sqrt(r1),wa=1-root,wb=root*(1-r2),wc=root*r2;
+   return [wa*tri.a[0]+wb*tri.b[0]+wc*tri.c[0],wa*tri.a[1]+wb*tri.b[1]+wc*tri.c[1],wa*tri.a[2]+wb*tri.b[2]+wc*tri.c[2]];
+  }
+  const samplePoints=[polygonSample(.27,.43,.31),polygonSample(.73,.61,.72)];
+  // A compact planarity residual helps document and validate each polygonal facet.
+  let planarityError=0;for(const v of verts){const e=Math.abs((v[0]-v0[0])*normal[0]+(v[1]-v0[1])*normal[1]+(v[2]-v0[2])*normal[2]);planarityError=Math.max(planarityError,e)}
+  FACETS.push({id,name,vertices:verts,normal,center,samplePoints,triangles,planarityError});
+  return id;
+ }
+ // Table: one octagonal facet, triangulated internally only for ray intersection.
+ registerFacet('table',table);
+ // Crown: 8 star facets, 8 planar bezel quads and 16 upper-girdle halves.
+ for(let i=0;i<8;i++)registerFacet('star',[table[i],table[(i+1)%8],stars[i]]);
+ for(let i=0;i<8;i++)registerFacet('bezel',[stars[(i+7)%8],table[i],stars[i],upper[(2*i)%16]]);
+ for(let i=0;i<8;i++){
+  const j=2*i;
+  registerFacet('upper-half',[stars[i],upper[(j+1)%16],upper[(j+2)%16]]);
+  registerFacet('upper-half',[stars[i],upper[j],upper[(j+1)%16]]);
+ }
+ // Pavilion: eight planar mains and sixteen lower-girdle triangles.
+ for(let i=0;i<8;i++){
+  const j=2*i,next=(i+1)%8;
+  registerFacet('pavilion-main',[culet,breaks[i],lower[(j+1)%16],breaks[next]]);
+  registerFacet('lower-half',[breaks[i],lower[j],lower[(j+1)%16]]);
+  registerFacet('lower-half',[breaks[next],lower[(j+2)%16],lower[(j+1)%16]]);
+ }
+ const cutFacetCount=FACETS.length;
+ // Sixteen girdle strips close the optical volume. They are modelled separately
+ // from the conventional 57-facet cut count, as is common in gemological diagrams.
+ for(let j=0;j<16;j++)registerFacet('girdle',[upper[j],upper[(j+1)%16],lower[(j+1)%16],lower[j]]);
+ const RB=.55,TUBE=.065;
+ // Polished torus shank. Correct the normal for the 1.5× z-axis geometric scale.
+ for(let j=0;j<52;j++){
+  const b=TAU*j/52,cb=Math.cos(b),sb=Math.sin(b);
+  for(let i=0;i<600;i++){
+   const a=TAU*i/600,ca=Math.cos(a),sa=Math.sin(a),rr=TUBE*(1-.35*Math.pow(Math.max(0,sa),6));
+   const nx=ca*cb,ny=sa*cb,nz=sb,nn=norm(nx,ny,nz/1.5);
+   add(ca*RB+nx*rr,sa*RB+ny*rr,nz*rr*1.5,...nn,BAND);
+  }
+ }
+ // Four tapered, smoothly curved prongs.
+ for(let i=0;i<4;i++){
+  const a=TAU*(i+.5)/4,ca=Math.cos(a),sa=Math.sin(a);
+  const p0=[.075*ca,RB+.005,.075*sa],p1=[.105*ca,.70,.105*sa],p2=[.235*ca,.84,.235*sa],p3=[.268*ca,tableY+.008,.268*sa];
+  for(let k=0;k<68;k++){
+   const u=k/67,v=1-u;
+   const bx=v*v*v*p0[0]+3*v*v*u*p1[0]+3*v*u*u*p2[0]+u*u*u*p3[0];
+   const by=v*v*v*p0[1]+3*v*v*u*p1[1]+3*v*u*u*p2[1]+u*u*u*p3[1];
+   const bz=v*v*v*p0[2]+3*v*v*u*p1[2]+3*v*u*u*p2[2]+u*u*u*p3[2];
+   const dx=3*v*v*(p1[0]-p0[0])+6*v*u*(p2[0]-p1[0])+3*u*u*(p3[0]-p2[0]);
+   const dy=3*v*v*(p1[1]-p0[1])+6*v*u*(p2[1]-p1[1])+3*u*u*(p3[1]-p2[1]);
+   const dz=3*v*v*(p1[2]-p0[2])+6*v*u*(p2[2]-p1[2])+3*u*u*(p3[2]-p2[2]);
+   const d=norm(dx,dy,dz),s=norm(...cross(d,[0,0,1])),w=norm(...cross(s,d));
+   const taper=.020*(1-.30*u)*(u<.84?1:1-.34*(u-.84)/.16);
+   for(let q=0;q<20;q++){const ph=TAU*q/20,nx=Math.cos(ph)*s[0]+Math.sin(ph)*w[0],ny=Math.cos(ph)*s[1]+Math.sin(ph)*w[1],nz=Math.cos(ph)*s[2]+Math.sin(ph)*w[2];add(bx+nx*taper,by+ny*taper,bz+nz*taper,nx,ny,nz,PRONG)}
+  }
+ }
+ const count=K.length,p=new Float32Array(P),n=new Float32Array(N),kind=new Uint8Array(K),face=new Uint8Array(FACE),order=new Float32Array(count),part=new Int16Array(count);
+ for(let i=0;i<count;i++){
+  const x=p[i*3],y=p[i*3+1];
+  if(kind[i]===BAND)order[i]=Math.abs(Math.atan2(Math.sin(Math.atan2(y,x)+Math.PI/2),Math.cos(Math.atan2(y,x)+Math.PI/2)))/Math.PI;
+  else if(kind[i]===PRONG)order[i]=1+(y-RB)/(1-RB)*.25;
+  else order[i]=1.25+(y-culetY)/(tableY-culetY)*.45;
+  part[i]=kind[i]===GEM?10+face[i]:kind[i];
+ }
+ let maxOrder=0;for(let i=0;i<count;i++)if(order[i]>maxOrder)maxOrder=order[i];
+ const metrics={tablePercent:55,crownAngle:34.5,pavilionAngle:40.75,starLength:50,lowerGirdleLength:75,girdleThickness,girdleThicknessPercent:girdleThickness/(2*R)*100,tableY,culetY,depthPercent:(tableY-culetY)/(2*R)*100};
+ return{p,n,kind,face,order,part,count,maxOrder,tris:TRIS,facets:FACETS,cutFacetCount,opticalFaceCount:FACETS.length,metrics};
+}
+const geom=makeGeometry();
+const CUT_FACET_COUNT=geom.cutFacetCount,OPTICAL_FACE_COUNT=geom.opticalFaceCount;
+
+// Diamond optical constants: two-pole Sellmeier fit (lambda in micrometres).
+// It reproduces n≈2.4517 at 430.8 nm, 2.4173 at 589.3 nm and 2.4073 at 687 nm.
+const OPTICAL={sellmeier:{A1:.3306,B1:.1750,A2:4.3356,B2:.1060},bands:[],panels:[]};
+function diamondN(wlNm){const l=wlNm/1000,l2=l*l,{A1,B1,A2,B2}=OPTICAL.sellmeier;return Math.sqrt(1+A1*l2/(l2-B1*B1)+A2*l2/(l2-B2*B2))}
+const CIE1931_2DEG_5NM = [
+ [0.01431, 0.000396, 0.06785001],
+ [0.02319, 0.00064, 0.1102],
+ [0.04351, 0.00121, 0.2074],
+ [0.07763, 0.00218, 0.3713],
+ [0.13438, 0.004, 0.6456],
+ [0.21477, 0.0073, 1.0390501],
+ [0.2839, 0.0116, 1.3856],
+ [0.3285, 0.01684, 1.62296],
+ [0.34828, 0.023, 1.74706],
+ [0.34806, 0.0298, 1.7826],
+ [0.3362, 0.038, 1.77211],
+ [0.3187, 0.048, 1.7441],
+ [0.2908, 0.06, 1.6692],
+ [0.2511, 0.0739, 1.5281],
+ [0.19536, 0.09098, 1.28764],
+ [0.1421, 0.1126, 1.0419],
+ [0.09564, 0.13902, 0.8129501],
+ [0.05795001, 0.1693, 0.6162],
+ [0.03201, 0.20802, 0.46518],
+ [0.0147, 0.2586, 0.3533],
+ [0.0049, 0.323, 0.272],
+ [0.0024, 0.4073, 0.2123],
+ [0.0093, 0.503, 0.1582],
+ [0.0291, 0.6082, 0.1117],
+ [0.06327, 0.71, 0.07824999],
+ [0.1096, 0.7932, 0.05725001],
+ [0.1655, 0.862, 0.04216],
+ [0.2257499, 0.9148501, 0.02984],
+ [0.2904, 0.954, 0.0203],
+ [0.3597, 0.9803, 0.0134],
+ [0.4334499, 0.9949501, 0.008749999],
+ [0.5120501, 1, 0.005749999],
+ [0.5945, 0.995, 0.0039],
+ [0.6784, 0.9786, 0.002749999],
+ [0.7621, 0.952, 0.0021],
+ [0.8425, 0.9154, 0.0018],
+ [0.9163, 0.87, 0.001650001],
+ [0.9786, 0.8163, 0.0014],
+ [1.0263, 0.757, 0.0011],
+ [1.0567, 0.6949, 0.001],
+ [1.0622, 0.631, 0.0008],
+ [1.0456, 0.5668, 0.0006],
+ [1.0026, 0.503, 0.00034],
+ [0.9384, 0.4412, 0.00024],
+ [0.8544499, 0.381, 0.00019],
+ [0.7514, 0.321, 0.0001],
+ [0.6424, 0.265, 4.999999e-05],
+ [0.5419, 0.217, 3e-05],
+ [0.4479, 0.175, 2e-05],
+ [0.3608, 0.1382, 1e-05],
+ [0.2835, 0.107, 0],
+ [0.2187, 0.0816, 0],
+ [0.1649, 0.061, 0],
+ [0.1212, 0.04458, 0],
+ [0.0874, 0.032, 0],
+ [0.0636, 0.0232, 0],
+ [0.04677, 0.017, 0],
+ [0.0329, 0.01192, 0],
+ [0.0227, 0.00821, 0],
+ [0.01584, 0.005723, 0],
+ [0.01135916, 0.004102, 0]
+];
+function cie1931(lambda){
+ const q=clamp((lambda-400)/5,0,CIE1931_2DEG_5NM.length-1),i=Math.floor(q),j=Math.min(i+1,CIE1931_2DEG_5NM.length-1),f=q-i,a=CIE1931_2DEG_5NM[i],b=CIE1931_2DEG_5NM[j];
+ return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];
+}
+function planckRelative(wlNm){const l=wlNm*1e-9,c2=1.438776877e-2,T=5600;return 1/(Math.pow(l,5)*(Math.exp(c2/(l*T))-1))}
+const WAVELENGTHS=Array.from({length:61},(_,i)=>400+i*5);
+let maxPlanck=0;for(const wl of WAVELENGTHS)maxPlanck=Math.max(maxPlanck,planckRelative(wl));
+let whiteX=0,whiteY=0,whiteZ=0;
+for(let bi=0;bi<WAVELENGTHS.length;bi++){
+ const l=WAVELENGTHS[bi],cmf=cie1931(l),spd=planckRelative(l)/maxPlanck,weight=(bi===0||bi===WAVELENGTHS.length-1)?.5:1;
+ OPTICAL.bands.push({wl:l,n:diamondN(l),spd,cmf});
+ whiteX+=cmf[0]*spd*weight;whiteY+=cmf[1]*spd*weight;whiteZ+=cmf[2]*spd*weight;
+}
+const OPTICAL_WHITE=[whiteX,whiteY,whiteZ];
+const opticalFaces=geom.facets;
+const opticalTriangles=geom.tris.map(t=>{
+ const e1=[t.b[0]-t.a[0],t.b[1]-t.a[1],t.b[2]-t.a[2]],e2=[t.c[0]-t.a[0],t.c[1]-t.a[1],t.c[2]-t.a[2]];
+ return{...t,e1,e2};
+});
+function makePanel(center,axis,width,height,strength){const n=norm(...center),u=norm(...cross(n,axis)),v=norm(...cross(n,u));return{n,u,v,width,height,strength}}
+// A studio environment of broad softboxes, narrow strip lights and restrained point sources.
+// Chromatic fire is generated by dispersion, not by painting rainbow colours onto facets.
+OPTICAL.panels=[
+ // Large neutral softboxes: broad reflections create readable white facet structure.
+ makePanel([ .02,.98,.18],[1,0,0],.42,.20,2.38),
+ // A compact face-up softbox is placed near the table facet's camera-mirror direction.
+ makePanel([ .02,.768,-.64],[1,0,0],.30,.20,2.45),
+ makePanel([-.72,.28,.63],[0,1,0],.28,.18,2.12),
+ makePanel([ .72,.28,.63],[0,1,0],.28,.18,2.12),
+ makePanel([-.70,.36,-.62],[0,1,0],.32,.20,1.7),
+ makePanel([ .70,.36,-.62],[0,1,0],.32,.20,1.7),
+ makePanel([ .02,-.92,.30],[1,0,0],.25,.12,.85),
+ // Narrow vertical strip lights produce controlled, elongated facet flashes.
+ makePanel([-.92,.12,.36],[0,1,0],.035,.38,3.0),
+ makePanel([ .92,.12,.36],[0,1,0],.035,.38,3.0),
+ makePanel([-.48,.18,-.86],[0,1,0],.028,.34,2.6),
+ makePanel([ .48,.18,-.86],[0,1,0],.028,.34,2.6),
+ makePanel([-.18,.94,-.28],[1,0,0],.032,.30,2.4),
+ makePanel([ .18,.94,-.28],[1,0,0],.032,.30,2.4),
+ // Small restrained point-like sources give occasional crisp scintillation.
+ makePanel([-.42,-.18,.89],[0,1,0],.018,.025,1.2),
+ makePanel([ .42,-.18,.89],[0,1,0],.018,.025,1.2),
+ makePanel([-.88,.42,-.20],[0,1,0],.020,.030,1.0),
+ makePanel([ .88,.42,-.20],[0,1,0],.020,.030,1.0)
+];
+const dot3=dot;
+function fresnelExact(n1,n2,cosI){
+ cosI=clamp(cosI,0,1);const eta=n1/n2,sinT2=eta*eta*Math.max(0,1-cosI*cosI);
+ if(sinT2>=1)return{F:1,cosT:0,tir:true};
+ const cosT=Math.sqrt(Math.max(0,1-sinT2));
+ const rs=(n1*cosI-n2*cosT)/(n1*cosI+n2*cosT||1),rp=(n1*cosT-n2*cosI)/(n1*cosT+n2*cosI||1);
+ return{F:clamp((rs*rs+rp*rp)*.5,0,1),cosT,tir:false};
+}
+function refractRay(I,N,eta,cosI){const k=1-eta*eta*(1-cosI*cosI);if(k<0)return null;return norm(eta*I[0]+(eta*cosI-Math.sqrt(k))*N[0],eta*I[1]+(eta*cosI-Math.sqrt(k))*N[1],eta*I[2]+(eta*cosI-Math.sqrt(k))*N[2])}
+function reflectRay(I,N){const q=2*dot3(I,N);return norm(I[0]-q*N[0],I[1]-q*N[1],I[2]-q*N[2])}
+function environmentRadiance(dir,wl){
+ let L=.012+.018*Math.max(0,dir[1])+.006*Math.max(0,-dir[1]);
+ for(const p of OPTICAL.panels){const c=dot3(dir,p.n);if(c<=.001)continue;const u=Math.abs(dot3(dir,p.u)/c)/p.width,v=Math.abs(dot3(dir,p.v)/c)/p.height;const fu=1-smooth(clamp((u-.72)/.28,0,1)),fv=1-smooth(clamp((v-.72)/.28,0,1));L+=p.strength*fu*fv*Math.pow(c,.18)}
+ // A restrained cool studio fill prevents unlit facets from becoming featureless black.
+ const blueSide=Math.max(0,dir[2])*.012,topFill=Math.max(0,dir[1])*.018;
+ return L+blueSide+topFill;
+}
+function intersectDiamond(origin,dir,skipFace){
+ let best=1e20,bestHit=null;
+ // The ray tests the complete closed brilliant mesh: every polygon facet is
+ // triangulated only for intersection, while its optical identity remains one facet.
+ for(let i=0;i<opticalTriangles.length;i++){
+  const f=opticalTriangles[i];if(f.face===skipFace)continue;
+  const e1=f.e1,e2=f.e2;
+  const hx=dir[1]*e2[2]-dir[2]*e2[1],hy=dir[2]*e2[0]-dir[0]*e2[2],hz=dir[0]*e2[1]-dir[1]*e2[0];
+  const det=e1[0]*hx+e1[1]*hy+e1[2]*hz;if(Math.abs(det)<1e-9)continue;
+  const inv=1/det,sx=origin[0]-f.a[0],sy=origin[1]-f.a[1],sz=origin[2]-f.a[2];
+  const u=(sx*hx+sy*hy+sz*hz)*inv;if(u<0||u>1)continue;
+  const qx=sy*e1[2]-sz*e1[1],qy=sz*e1[0]-sx*e1[2],qz=sx*e1[1]-sy*e1[0];
+  const v=(dir[0]*qx+dir[1]*qy+dir[2]*qz)*inv;if(v<0||u+v>1)continue;
+  const t=(e2[0]*qx+e2[1]*qy+e2[2]*qz)*inv;
+  if(t>1e-5&&t<best){best=t;bestHit={t,face:f.face,n:f.n,p:[origin[0]+dir[0]*t,origin[1]+dir[1]*t,origin[2]+dir[2]*t]}}
+ }
+ return bestHit;
+}
+function localToWorldDirection(d,cy,sy){return norm(cy*d[0]+sy*d[2],d[1],-sy*d[0]+cy*d[2])}
+function traceSpectralPath(faceId,viewLocal,cy,sy,band,samplePoint){
+ const f=opticalFaces[faceId],N=f.normal,I=[-viewLocal[0],-viewLocal[1],-viewLocal[2]],cosIn=dot3(viewLocal,N);
+ if(cosIn<=.002)return .018;
+ const n=band.n,first=fresnelExact(1,n,cosIn),reflected=reflectRay(I,N),refW=localToWorldDirection(reflected,cy,sy);
+ let L=first.F*environmentRadiance(refW,band.wl);
+ let D=refractRay(I,N,1/n,cosIn);if(!D)return L;
+ const start=samplePoint||f.center;let energy=1-first.F,O=[start[0]+D[0]*.00010,start[1]+D[1]*.00010,start[2]+D[2]*.00010];
+ for(let bounce=0;bounce<12&&energy>.006;bounce++){
+  const hit=intersectDiamond(O,D,bounce===0?faceId:-1);if(!hit)break;
+  let Nout=hit.n;if(dot3(D,Nout)<0)Nout=[-Nout[0],-Nout[1],-Nout[2]];
+  const cosExit=clamp(dot3(D,Nout),0,1),fr=fresnelExact(n,1,cosExit);
+  if(fr.tir){D=reflectRay(D,Nout);O=[hit.p[0]+D[0]*.00008,hit.p[1]+D[1]*.00008,hit.p[2]+D[2]*.00008];continue}
+  const Dout=refractRay(D,[-Nout[0],-Nout[1],-Nout[2]],n,cosExit);
+  if(Dout){const world=localToWorldDirection(Dout,cy,sy);L+=energy*(1-fr.F)*environmentRadiance(world,band.wl)}
+  energy*=fr.F;if(energy<=.012)break;
+  D=reflectRay(D,Nout);O=[hit.p[0]+D[0]*.00008,hit.p[1]+D[1]*.00008,hit.p[2]+D[2]*.00008];
+ }
+ return L;
+}
+function aces(x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0,1)}
+function linearToSrgb(x){x=clamp(x,0,1);return x<=.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-.055}
+const diamondRGB=new Uint8Array(OPTICAL_FACE_COUNT*3),diamondIntensity=new Float32Array(OPTICAL_FACE_COUNT),diamondFire=new Uint8Array(OPTICAL_FACE_COUNT),diamondSpecular=new Float32Array(OPTICAL_FACE_COUNT);
+// Neutral optical fallback keeps the stone visible while the progressive spectral cache warms up.
+diamondRGB.fill(238);diamondIntensity.fill(.20);diamondSpecular.fill(.16);
+// Optical results are sampled at discrete ring angles and blended between samples.
+// This avoids repeating thousands of ray/triangle tests on every animation frame.
+const OPTICAL_SAMPLES=MOBILE?1:2,OPTICS_STEPS=MOBILE?12:16,OPTICS_ANGLE=TAU/OPTICS_STEPS;
+function makeOpticsBuffer(){return{rgb:new Uint8Array(OPTICAL_FACE_COUNT*3),intensity:new Float32Array(OPTICAL_FACE_COUNT),fire:new Uint8Array(OPTICAL_FACE_COUNT),specular:new Float32Array(OPTICAL_FACE_COUNT),face:0,ready:false}}
+const opticsCache=Array.from({length:OPTICS_STEPS},makeOpticsBuffer);
+function computeDiamondOptics(yaw,startFace=0,endFace=OPTICAL_FACE_COUNT,target=null){
+ const dst=target||{rgb:diamondRGB,intensity:diamondIntensity,fire:diamondFire,specular:diamondSpecular};
+ const rgb=dst.rgb,intensity=dst.intensity,fire=dst.fire,specular=dst.specular;
+ const cy=Math.cos(yaw),sy=Math.sin(yaw);
+ for(let faceId=startFace;faceId<endFace;faceId++){
+  const f=opticalFaces[faceId],allSamples=f.samplePoints&&f.samplePoints.length?f.samplePoints:[f.center],samples=allSamples.slice(0,OPTICAL_SAMPLES);
+  const spectrum=new Float64Array(OPTICAL.bands.length);
+  // Area-stratified samples capture within-facet perspective and highlight variation;
+  // the mobile path uses one sample to keep startup cost close to the previous build.
+  for(const c of samples){
+   const world=[cy*c[0]+sy*c[2],c[1],-sy*c[0]+cy*c[2]],Vw=norm(eye[0]-world[0],eye[1]-world[1],eye[2]-world[2]),V=norm(cy*Vw[0]-sy*Vw[2],Vw[1],sy*Vw[0]+cy*Vw[2]);
+   for(let b=0;b<OPTICAL.bands.length;b++){const band=OPTICAL.bands[b];spectrum[b]+=traceSpectralPath(faceId,V,cy,sy,band,c)/samples.length*band.spd;}
+  }
+  let X=0,Y=0,Z=0;
+  for(let b=0;b<OPTICAL.bands.length;b++){const band=OPTICAL.bands[b],cmf=band.cmf,s=spectrum[b];X+=s*cmf[0];Y+=s*cmf[1];Z+=s*cmf[2]}
+  X=.95047*X/OPTICAL_WHITE[0];Y=Y/OPTICAL_WHITE[1];Z=1.08883*Z/OPTICAL_WHITE[2];
+  let r=Math.max(0,3.2406*X-1.5372*Y-.4986*Z),g=Math.max(0,-.9689*X+1.8758*Y+.0415*Z),b=Math.max(0,.0557*X-.2040*Y+1.0570*Z);
+  const exposure=1.28;r=aces(r*exposure);g=aces(g*exposure);b=aces(b*exposure);
+  const sr=linearToSrgb(r),sg=linearToSrgb(g),sb=linearToSrgb(b),peak=Math.max(sr,sg,sb,.001),off=faceId*3;
+  // Keep near-neutral body reflections white, but retain hue when the transported
+  // spectrum genuinely produces a saturated dispersion colour.
+  const lo=Math.min(sr,sg,sb),sat=clamp((peak-lo)/peak,0,1);
+  const chroma=clamp((sat-.018)*1.22,0,.86),mixWhite=v=>1-chroma+chroma*clamp(v/peak,0,1);
+  rgb[off]=Math.round(mixWhite(sr)*255);rgb[off+1]=Math.round(mixWhite(sg)*255);rgb[off+2]=Math.round(mixWhite(sb)*255);
+  const perceptualLuminance=.2126*sr+.7152*sg+.0722*sb;
+  intensity[faceId]=clamp(perceptualLuminance*1.22+.018,.035,1.08);
+  fire[faceId]=sat>.12&&peak>.19?(sr>sg*1.06&&sr>sb*1.06?FIRE_R:sg>sr*1.06&&sg>sb*1.06?FIRE_G:FIRE_B):0;
+  specular[faceId]=Math.max(sr,sg,sb);
+ }
+}
+function applyCachedOptics(yaw){
+ let a=((yaw%TAU)+TAU)%TAU/OPTICS_ANGLE,i0=Math.floor(a)%OPTICS_STEPS,i1=(i0+1)%OPTICS_STEPS,t=a-Math.floor(a);t=t*t*(3-2*t);
+ let A=opticsCache[i0].ready?opticsCache[i0]:null,B=opticsCache[i1].ready?opticsCache[i1]:null;
+ if(!A&&!B){return}
+ if(!A){A=B;t=0}if(!B){B=A;t=0}
+ for(let i=0;i<OPTICAL_FACE_COUNT;i++){
+  const o=i*3;diamondRGB[o]=Math.round(A.rgb[o]+(B.rgb[o]-A.rgb[o])*t);diamondRGB[o+1]=Math.round(A.rgb[o+1]+(B.rgb[o+1]-A.rgb[o+1])*t);diamondRGB[o+2]=Math.round(A.rgb[o+2]+(B.rgb[o+2]-A.rgb[o+2])*t);
+  diamondIntensity[i]=A.intensity[i]+(B.intensity[i]-A.intensity[i])*t;diamondSpecular[i]=A.specular[i]+(B.specular[i]-A.specular[i])*t;
+  const satA=Math.max(A.rgb[o],A.rgb[o+1],A.rgb[o+2])-Math.min(A.rgb[o],A.rgb[o+1],A.rgb[o+2]),satB=Math.max(B.rgb[o],B.rgb[o+1],B.rgb[o+2])-Math.min(B.rgb[o],B.rgb[o+1],B.rgb[o+2]);
+  diamondFire[i]=t<.5?(satA>18?A.fire[i]:B.fire[i]):(satB>18?B.fire[i]:A.fire[i]);
+ }
+}
+// Build the 16 desktop / 12 mobile spectral angle samples cooperatively. Each slice yields to the browser,
+// so the page stays interactive even on mid-range phones while optics are calculated.
+let opticsBuildIndex=0,opticsBuildFace=0,opticsBuildTimer=0,opticsBuildPaused=false;
+function opticsBuildSlice(){
+ opticsBuildTimer=0;if(opticsBuildPaused||document.hidden){opticsBuildTimer=setTimeout(opticsBuildSlice,120);return}
+ const began=performance.now(),budget=MOBILE?2.5:3.8;
+ while(opticsBuildIndex<OPTICS_STEPS&&performance.now()-began<budget){
+  const buffer=opticsCache[opticsBuildIndex],yaw=opticsBuildIndex*OPTICS_ANGLE,end=Math.min(OPTICAL_FACE_COUNT,opticsBuildFace+1);
+  computeDiamondOptics(yaw,opticsBuildFace,end,buffer);opticsBuildFace=end;buffer.face=end;
+  if(opticsBuildFace>=OPTICAL_FACE_COUNT){buffer.ready=true;opticsBuildIndex++;opticsBuildFace=0}
+ }
+ if(opticsBuildIndex<OPTICS_STEPS)opticsBuildTimer=setTimeout(opticsBuildSlice,MOBILE?8:6);
+}
+function startOpticsBuild(){if(!opticsBuildTimer&&opticsBuildIndex<OPTICS_STEPS)opticsBuildTimer=setTimeout(opticsBuildSlice,0)}
+
+
+function makeSeeds(){
+ const r=rng(13),spk=new Array(MOBILE?420:1050);for(let i=0;i<spk.length;i++){const a=[r(),r(),r(),r(),r()],vi=Math.floor(a[0]*geom.count);spk[i]={vi,born:DRAW0+geom.order[vi]/geom.maxOrder*(DRAW1-DRAW0),life:.9+.9*a[1],a:a[2]*TAU,speed:.4+.6*a[3],up:.5+.9*a[4],spark:a[3]>.7}}
+ const rd=rng(5),dust=Array.from({length:MOBILE?90:190},()=>[rd(),rd(),rd(),rd()]);
+ const rs=rng(2),stars=Array.from({length:MOBILE?28:68},()=>[rs()*10-5,rs()*6-1.5,rs()*TAU]);
+ const rb=rng(14),bubbleCount=MOBILE?420:760,golden= Math.PI*(3-Math.sqrt(5));
+ const bubble=Array.from({length:bubbleCount},(_,i)=>{const yy=1-2*(i+.5)/bubbleCount,rr=Math.sqrt(Math.max(0,1-yy*yy)),phi=i*golden;return{x:rr*Math.cos(phi),y:yy,z:rr*Math.sin(phi),phase:rb(),hue:rb(),grain:rb()}});
+ return{spk,dust,stars,bubble};
+}
+const seeds=makeSeeds();
+// Camera basis is identical to the Python look-at camera.
+const eye=[0,4.8,3.8],target=[0,.24,0],fwd=norm(target[0]-eye[0],target[1]-eye[1],target[2]-eye[2]),right=norm(...cross(fwd,[0,1,0])),up=cross(right,fwd),viewDir=norm(-fwd[0],-fwd[1],-fwd[2]),key=norm(0,.8,.6);
+startOpticsBuild();
+// Cell buffers: nearest visible surface plus particle layer, matching the original depth-buffer pass.
+const partGrid=new Int16Array(CELL_COUNT),depthGrid=new Float32Array(CELL_COUNT),lumGrid=new Float32Array(CELL_COUNT),tagGrid=new Uint8Array(CELL_COUNT),charGrid=new Uint16Array(CELL_COUNT),cellRGB=new Uint8Array(CELL_COUNT*3),particleDepth=new Float32Array(CELL_COUNT),edgeX=new Int8Array(CELL_COUNT),edgeY=new Int8Array(CELL_COUNT),edgeGrid=new Uint8Array(CELL_COUNT),hashGrid=new Uint16Array(CELL_COUNT),baseShade=new Float32Array(geom.count),revealMask=new Uint8Array(geom.count);
+for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)hashGrid[y*COLS+x]=(y*7919+x*104729)%9973;
+function clearGrid(){partGrid.fill(-1);depthGrid.fill(99);lumGrid.fill(0);tagGrid.fill(0);charGrid.fill(0);cellRGB.fill(0);particleDepth.fill(99);edgeGrid.fill(0);edgeX.fill(0);edgeY.fill(0)}
+function project(x,y,z){const dx=x-eye[0],dy=y-eye[1],dz=z-eye[2],cx=dx*right[0]+dy*right[1]+dz*right[2],cy=dx*up[0]+dy*up[1]+dz*up[2],cz=dx*fwd[0]+dy*fwd[1]+dz*fwd[2];if(cz<=.2)return -1;const ix=(.5+cx/cz*2.15)*COLS|0,iy=(.5-cy/cz*2.15*ASPECT)*ROWS|0;if(ix<0||ix>=COLS||iy<0||iy>=ROWS)return -1;return (iy*COLS+ix)*65536+Math.floor(cz*10000)}
+function particle(x,y,z,bright,glyph,tag,frontOverlay=false){if(bright<=.02)return;const packed=project(x,y,z);if(packed<0)return;const idx=(packed/65536)|0,dep=(packed%65536)/10000;if(partGrid[idx]>=0&&(!frontOverlay||dep>=depthGrid[idx]))return;if(dep>=particleDepth[idx])return;particleDepth[idx]=dep;partGrid[idx]=-2;lumGrid[idx]=clamp(bright,0,1);tagGrid[idx]=tag;charGrid[idx]=glyph.charCodeAt(0)}
+const CHAR_ID=new Map();let allChars=[...new Set((' .,:;!|/\\-~_+=*^`\"\'()[]{}<>ilrtfvxyzcnouae0123456789ABCDEF#$%&@QWmM').split(''))];allChars.forEach((ch,i)=>CHAR_ID.set(ch,i+1));
+const glyphAtlas=new Uint8Array(allChars.length*CW*CH);
+const GLYPH_DENSITY=[];
+(()=>{const c=document.createElement('canvas');c.width=CW;c.height=CH;const g=c.getContext('2d',{willReadFrequently:true});g.font='11px Consolas, Menlo, "DejaVu Sans Mono", "Courier New", monospace';g.textAlign='center';g.textBaseline='middle';for(let i=0;i<allChars.length;i++){g.clearRect(0,0,CW,CH);g.fillStyle='#fff';g.fillText(allChars[i],CW/2,CH/2+0.25);const d=g.getImageData(0,0,CW,CH).data;let coverage=0;for(let k=0;k<CW*CH;k++){const a=d[k*4+3];glyphAtlas[i*CW*CH+k]=a;coverage+=a/255}GLYPH_DENSITY.push(coverage/(CW*CH))}})();
+// Build twelve tonal levels from measured raster coverage of each glyph in the active system font.
+const FILL=Array.from({length:12},(_,level)=>{const target=.012+level*.043;return allChars.map((ch,i)=>({ch,delta:Math.abs(GLYPH_DENSITY[i]-target),i})).sort((a,b)=>a.delta-b.delta||a.i-b.i).slice(0,6).map(v=>v.ch)});
+function putGlyph(index,ch){charGrid[index]=CHAR_ID.get(ch)||1}
+let imageData=frameCtx.createImageData(W,H),pixels=imageData.data;
+// Exact unpolarized conductor Fresnel for a neutral, platinum-like illustrative metal.
+// The eta/k pair is a visual proxy only: it is not a measured alloy data set.
+function fresnelConductor(cosTheta,eta=2.35,k=4.10){
+ const c=clamp(cosTheta,0,1),c2=c*c,s2=1-c2,eta2=eta*eta,k2=k*k;
+ const t0=eta2-k2-s2,a2b2=Math.sqrt(t0*t0+4*eta2*k2),a=Math.sqrt(Math.max(0,(a2b2+t0)*.5));
+ const t1=a2b2+c2,t2=2*c*a,rs=(t1-t2)/(t1+t2||1);
+ const t3=c2*a2b2+s2*s2,t4=t2*s2,rp=rs*(t3-t4)/(t3+t4||1);
+ return clamp((rs+rp)*.5,0,1);
+}
+// Anisotropic GGX / Smith Cook–Torrance for directional polishing.
+function ggxConductorReflection(N,V,L,T,roughX,roughY,energy){
+ const ndv=Math.max(0,dot(N,V)),ndl=Math.max(0,dot(N,L));if(ndv<=.002||ndl<=.002)return 0;
+ const tDot=dot(N,T),Tn=norm(T[0]-N[0]*tDot,T[1]-N[1]*tDot,T[2]-N[2]*tDot),H=norm(V[0]+L[0],V[1]+L[1],V[2]+L[2]),B=norm(...cross(N,Tn));
+ const hx=dot(H,Tn),hy=dot(H,B),hz=Math.max(0,dot(H,N));if(hz<=0)return 0;
+ const ax=Math.max(.018,roughX*roughX),ay=Math.max(.018,roughY*roughY);
+ const q=(hx/ax)*(hx/ax)+(hy/ay)*(hy/ay)+hz*hz,D=1/(Math.PI*ax*ay*q*q+1e-9);
+ const lambda=w=>{const nz=Math.max(.001,dot(N,w)),tx=dot(Tn,w),ty=dot(B,w);return .5*(Math.sqrt(1+((ax*tx)*(ax*tx)+(ay*ty)*(ay*ty))/(nz*nz))-1)};
+ const G=1/(1+lambda(V)+lambda(L)),F=fresnelConductor(Math.max(0,dot(V,H)));
+ const brdfTimesCos=D*G*F/(4*Math.max(.04,ndv));
+ return clamp(brdfTimesCos*.0036*energy,0,1.15);
+}
+function drawFrame(t){
+ clearGrid();const yaw=TAU*Math.max(t-DRAW1-.6,0)/TURN+dragYaw,cy=Math.cos(yaw),sy=Math.sin(yaw);
+ applyCachedOptics(yaw);
+ const rim=norm(Math.cos(t*.9),.5,Math.sin(t*.9)),rim2=norm(Math.cos(t*.57+2.1),.72,Math.sin(t*.57+2.1)),strip=norm(Math.cos(t*.43+1.35),.16,Math.sin(t*.43+1.35));
+ const head=(t-DRAW0)/(DRAW1-DRAW0)*geom.maxOrder,fl=1+.8*Math.exp(-Math.pow((t-DRAW1-.15)/.18,2));let glintCount=0;
+ // Metal remains micro-specular; diamond facets use spectral ray transport rather than painted fire.
+ for(let i=0;i<geom.count;i++){const k=smooth((head-geom.order[i])/.06);if(k<.96){revealMask[i]=0;continue}revealMask[i]=1;const j=i*3,x=geom.p[j],y=geom.p[j+1],z=geom.p[j+2],rx=cy*x+sy*z,rz=-sy*x+cy*z,nx=cy*geom.n[j]+sy*geom.n[j+2],ny=geom.n[j+1],nz=-sy*geom.n[j]+cy*geom.n[j+2],kind=geom.kind[i],fid=geom.face[i],ndv=clamp(nx*viewDir[0]+ny*viewDir[1]+nz*viewDir[2],0,1);let spec=0,shade,tag=kind;
+  let metalSpec=0;
+  if(kind===GEM){const fo=fid;shade=diamondIntensity[fo]*(t>DRAW1&&t<DRAW1+.45?fl:1);tag=diamondFire[fo]||GEM;if(diamondSpecular[fo]>.91&&shade>.56){tag=GLINT;glintCount++}else if(diamondFire[fo])glintCount++;}
+  else{
+   const N=[nx,ny,nz],V=viewDir,phi=Math.atan2(y,x),T=kind===BAND?[-Math.sin(phi),Math.cos(phi),0]:norm(-nz,0,nx);
+   const roughX=kind===PRONG?.19:.215,roughY=kind===PRONG?.27:.285;
+   metalSpec=ggxConductorReflection(N,V,key,T,roughX,roughY,1.00)+ggxConductorReflection(N,V,rim,T,roughX,roughY,.82)+ggxConductorReflection(N,V,rim2,T,roughX,roughY,.58)+ggxConductorReflection(N,V,strip,T,roughX*.88,roughY*.94,.64);
+   const grazingFresnel=.085*Math.pow(1-ndv,2.7);
+   spec=metalSpec;
+   shade=.19+.94*metalSpec+grazingFresnel;
+   if(spec>.30)tag=GLINT;
+   if(spec>.48)glintCount++;
+  }
+  baseShade[i]=shade;const packed=project(rx,y,rz);if(packed<0)continue;const idx=(packed/65536)|0,dep=(packed%65536)/10000;if(dep>=depthGrid[idx])continue;depthGrid[idx]=dep;partGrid[idx]=geom.part[i];lumGrid[idx]=clamp(shade,0,1.35);tagGrid[idx]=tag;if(kind===GEM){const co=fid*3;cellRGB[idx*3]=diamondRGB[co];cellRGB[idx*3+1]=diamondRGB[co+1];cellRGB[idx*3+2]=diamondRGB[co+2];}else{const shine=clamp(metalSpec*.72,0,1),warm=kind===PRONG?3:0;cellRGB[idx*3]=Math.round(130+82*shine+warm);cellRGB[idx*3+1]=Math.round(145+84*shine+warm);cellRGB[idx*3+2]=Math.round(163+88*shine);}}
+ // Floor reflection uses every eligible sample with physically-inspired distance falloff.
+ for(let i=0;i<geom.count;i++){if(!revealMask[i])continue;const j=i*3,x=geom.p[j],y=geom.p[j+1],z=geom.p[j+2],rx=cy*x+sy*z,rz=-sy*x+cy*z;particle(rx,2*FLOOR-y-.06,rz,.16*clamp(baseShade[i],0,1.2)*Math.exp(-Math.max(0,y-FLOOR)*1.35),'.',REFL)}
+ // Distant star field.
+ for(const s of seeds.stars)particle(s[0],s[1],-6,.045+.055*Math.sin(t*1.4+s[2]),'.',STAR);
+ // Drifting dust cloud.
+ for(const d of seeds.dust){const a=d[0]*TAU+t*(.3+.5*d[1]),r=.9+.8*d[2],y=((d[3]*2.4+t*.08)%2.4)-.8,tw=(.10+.30*Math.pow(Math.max(0,Math.sin(t*(2+3*d[1])+d[0]*40)),4))*smooth((t-BUILD+.5)/1.5);particle(Math.cos(a)*r,y,Math.sin(a)*r*.7,tw,tw>.7?'*':'.',DUST)}
+ // Sparks born along the writing head, then accelerated downward by gravity.
+ for(const s of seeds.spk){const age=t-s.born;if(age<=0||age>=s.life)continue;const j=s.vi*3,x=geom.p[j],y=geom.p[j+1],z=geom.p[j+2],rx=x,rz=z,vx=Math.cos(s.a)*s.speed,vz=Math.sin(s.a)*s.speed,px=rx+vx*age,py=y+s.up*age-1.1*age*age,pz=rz+vz*age,fade=.72*Math.pow(Math.max(0,1-age/s.life),1.45)*(.65+.35*Math.sin(age*22+s.a));particle(px,py,pz,fade,s.spark?'*':fade>.45?'+':'.',s.spark?FIRE_G:DUST)}
+ // A short spherical light event emitted from the diamond's optical centre:
+ // charge -> expanding thin shell -> bright pressure-front -> delicate dispersal.
+ const ba=t-DRAW1-.10,bcY=.805;
+ if(ba>=0&&ba<=1.78){
+  const charge=1-smooth(ba/.22);
+  if(charge>0){
+   const cr=.035+.055*smooth(ba/.22);
+   for(let i=0;i<seeds.bubble.length;i+=3){const b=seeds.bubble[i],tag=b.hue>.78?BUBBLE_G:b.hue>.42?BUBBLE_C:BUBBLE;particle(b.x*cr,bcY+b.y*cr,.18+b.z*cr,.30+.66*charge*(.65+.35*Math.sin(t*36+b.phase*TAU)),b.grain>.72?'*':'+',tag,true)}
+  }
+  const grow=smooth((ba-.12)/.82),pop=smooth((ba-.94)/.62),radius=.055+1.72*grow+.20*pop;
+  const shellFade=ba<.94?(.56+.32*smooth(grow))*(.72+.28*Math.sin(ba*8)):Math.pow(1-pop,1.35);
+  for(let i=0;i<seeds.bubble.length;i++){
+   const b=seeds.bubble[i],micro=1+.009*Math.sin(t*19+b.phase*TAU)+.006*(b.grain-.5),r=radius*micro;
+   const x=b.x*r,y=bcY+b.y*r*.94,z=b.z*r;
+   const scint=.70+.30*Math.sin(t*12+b.phase*TAU),fade=shellFade*scint*(.72+.28*b.grain);
+   const tag=b.hue>.82?BUBBLE_G:b.hue>.46?BUBBLE_C:BUBBLE;
+   particle(x,y,z,fade,b.grain>.82?'*':fade>.58?'+':'.',tag,true);
+   // A brief outward spray at the instant the bubble ruptures.
+   if(pop>.015&&i%3===0){const kick=.12+.48*pop,rr=r+kick;particle(b.x*rr,bcY+b.y*rr*.94,b.z*rr,Math.pow(1-pop,1.5)*(.35+.55*b.grain),b.grain>.65?'*':'+',tag,true)}
+  }
+  const coreFlash=Math.exp(-Math.pow((ba-.98)/.105,2));
+  if(coreFlash>.025)particle(0,bcY,.30,coreFlash,'*',BUBBLE_G,true);
+ }
+ // Body contours and luminance-driven glyph assignment.
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const idx=y*COLS+x,part=partGrid[idx];if(part<0)continue;let gx=0,gy=0,isEdge=false;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy,ni=(xx<0||xx>=COLS||yy<0||yy>=ROWS)?-1:partGrid[yy*COLS+xx],nz=(xx<0||xx>=COLS||yy<0||yy>=ROWS)?99:depthGrid[yy*COLS+xx];if(ni<0||(ni!==part&&nz>depthGrid[idx]+.02)){gx+=dx;gy+=dy;if(!dx||!dy)isEdge=true}}if(isEdge){edgeGrid[idx]=1;edgeX[idx]=gx;edgeY[idx]=gy}}
+ let visible=0;
+ for(let i=0;i<CELL_COUNT;i++){const part=partGrid[i];if(part<0)continue;const lum=lumGrid[i],tag=tagGrid[i],h=hashGrid[i],x=i%COLS,y=(i/COLS)|0;let ch;if(tag>=GLINT&&tag<=FIRE_G)ch='*';else if(edgeGrid[i]){const gx=edgeX[i],gy=edgeY[i],ax=Math.abs(gx),ay=Math.abs(gy);ch=(ax+ay)===0?'+':ax>2*ay?'|':ay>2*ax?(gy>0?'_':'-'):(gx*gy>0?'/':'\\')}else{const level=clamp(Math.floor((lum+((h%9)-4)*.004)*11.5),0,11);ch=FILL[level][(x*13+y*7+(h%5))%FILL[level].length]}putGlyph(i,ch);lumGrid[i]=edgeGrid[i]?Math.max(.76,lum):(part>=10?clamp(lum,.055,1):clamp(lum,.16,1));visible++}
+ // Particle glyphs are composited only into otherwise empty cells, as in the original renderer.
+ for(let i=0;i<CELL_COUNT;i++)if(partGrid[i]===-2){const fs=lumGrid[i],tag=tagGrid[i],y=(i/COLS)|0,x=i%COLS;let ch;if(tag===REFL){const level=clamp(Math.floor(fs*11.5),0,11),arr=FILL[level];ch=arr[(x*13+y*7+(hashGrid[i]%5))%arr.length]}else if(tag===DUST)ch=fs>.7?'*':fs>.35?'+':'.';else if(tag===STAR)ch='.';else if(tag===BUBBLE||tag===BUBBLE_C||tag===BUBBLE_G)ch=fs>.74?'*':fs>.49?'+':fs>.24?':':'.';else ch=(y+x)%3===0?'&':(y+x)%3===1?'8':'%';putGlyph(i,ch)}
+ // Eight brightest gem glints cast fine ASCII star rays.
+ const bright=[];for(let i=0;i<CELL_COUNT;i++){const tag=tagGrid[i];if(partGrid[i]>=0&&tag>=GLINT&&tag<=FIRE_G)bright.push([lumGrid[i]+(hashGrid[i]%7)*.01,i])}bright.sort((a,b)=>b[0]-a[0]);for(let n=0;n<Math.min(2,bright.length);n++){if(bright[n][0]<=0)break;const idx=bright[n][1],cy0=(idx/COLS)|0,cx0=idx%COLS,pulse=.68+.32*Math.sin(t*1.9+(hashGrid[idx]%31)*.09),reach=(2+3*pulse)|0;for(let dist=1;dist<=reach;dist++){const fade=1-dist/(reach+1);const rays=[[0,1,'-'],[0,-1,'-'],[1,0,'|'],[-1,0,'|']];for(const [dy,dx,ch] of rays){const yy=cy0+dy*dist,xx=cx0+dx*dist*2;if(yy>=0&&yy<ROWS&&xx>=0&&xx<COLS){const j=yy*COLS+xx;if(lumGrid[j]<fade){putGlyph(j,ch);lumGrid[j]=fade;tagGrid[j]=GLINT}}}if(dist<=Math.floor(reach/2)){for(const [dy,dx,ch] of [[1,1,'\\'],[-1,-1,'\\'],[1,-1,'/'],[-1,1,'/']]){const yy=cy0+dy*dist,xx=cx0+dx*dist;if(yy>=0&&yy<ROWS&&xx>=0&&xx<COLS){const j=yy*COLS+xx;if(lumGrid[j]<fade*.7){putGlyph(j,ch);lumGrid[j]=fade*.7;tagGrid[j]=GLINT}}}}}putGlyph(idx,'*');lumGrid[idx]=1}
+ // Rasterize a pre-rendered 7×11 glyph atlas into the exact virtual-resolution image.
+ pixels.fill(0);for(let i=0;i<CELL_COUNT;i++){const gi=charGrid[i];if(!gi)continue;const tag=tagGrid[i],hasMaterialRGB=partGrid[i]>=10||partGrid[i]===BAND||partGrid[i]===PRONG,offRGB=i*3,rgb=hasMaterialRGB?[cellRGB[offRGB],cellRGB[offRGB+1],cellRGB[offRGB+2]]:(COLORS[tag]||COLORS[0]),alpha=clamp(lumGrid[i],0,1),gx=(i%COLS)*CW,gy=((i/COLS)|0)*CH,off=(gi-1)*CW*CH;for(let py=0;py<CH;py++){let dst=((gy+py)*W+gx)*4,src=off+py*CW;for(let px=0;px<CW;px++){const m=glyphAtlas[src+px];if(!m)continue;const v=alpha*m/255;pixels[dst+px*4]=rgb[0]*v;pixels[dst+px*4+1]=rgb[1]*v;pixels[dst+px*4+2]=rgb[2]*v;pixels[dst+px*4+3]=255}}}frameCtx.putImageData(imageData,0,0);
+ return{yaw,glintCount,visible};
+}
+function drawHud(t,info){const deg=((info.yaw/TAU*360)%360+360)%360;out.save();out.setTransform(view.width/W,0,0,view.height/H,0,0);out.font='15px Consolas, Menlo, "DejaVu Sans Mono", monospace';out.textBaseline='alphabetic';out.fillStyle='rgba(142,151,172,.52)';out.fillText(`ROTATION ${deg.toFixed(2).padStart(6,'0')}°   ✧ ${String(info.glintCount).padStart(4,' ')}`,56,H-48);out.fillText(`ASCII CELLS ${info.visible.toLocaleString('en-US').padStart(5,' ')}   61 CIE BANDS × ${OPTICAL_SAMPLES} RAY${OPTICAL_SAMPLES>1?'S':''} · 57 CUT FACETS`,56,H-23);if(opticsBuildIndex<OPTICS_STEPS){out.fillStyle='rgba(150,174,210,.42)';out.fillText(`OPTICS ${Math.round((opticsBuildIndex+opticsBuildFace/OPTICAL_FACE_COUNT)/OPTICS_STEPS*100)}%`,W-180,H-23)}out.fillStyle='rgba(255,122,182,.78)';out.beginPath();out.arc(W-125,29,3,0,TAU);out.fill();out.fillStyle='rgba(205,190,220,.56)';out.fillText(`${t.toFixed(2).padStart(5,'0')}s`,W-112,35);out.restore()}
+function compose(t,info){
+ // Half-life persistence, then maximum blend, matching Pygame's trail surface.
+ trailCtx.save();trailCtx.globalCompositeOperation='destination-in';trailCtx.fillStyle='rgba(0,0,0,.64)';trailCtx.fillRect(0,0,W,H);trailCtx.globalCompositeOperation='lighter';trailCtx.drawImage(frameCanvas,0,0);trailCtx.restore();
+ // Two independently downsampled blur/glow passes, close to the original glow stack.
+ glowACtx.clearRect(0,0,glowA.width,glowA.height);glowACtx.imageSmoothingEnabled=true;glowACtx.drawImage(trailCanvas,0,0,glowA.width,glowA.height);glowFullCtx.clearRect(0,0,W,H);glowFullCtx.save();glowFullCtx.filter='blur(.85px)';glowFullCtx.drawImage(glowA,0,0,W,H);glowFullCtx.restore();
+ glowBCtx.clearRect(0,0,glowB.width,glowB.height);glowBCtx.imageSmoothingEnabled=true;glowBCtx.drawImage(trailCanvas,0,0,glowB.width,glowB.height);glowFullCtx.save();glowFullCtx.globalCompositeOperation='lighter';glowFullCtx.globalAlpha=.42;glowFullCtx.filter='blur(1.9px)';glowFullCtx.drawImage(glowB,0,0,W,H);glowFullCtx.restore();
+ const scaleX=view.width/W,scaleY=view.height/H;out.setTransform(scaleX,0,0,scaleY,0,0);out.globalCompositeOperation='source-over';out.globalAlpha=1;
+ // Quiet, near-black studio atmosphere; the ASCII ring remains the brightest and clearest subject.
+ out.fillStyle='#010207';out.fillRect(0,0,W,H);
+ let bg=out.createRadialGradient(W*.50,H*.47,12,W*.50,H*.49,Math.max(W,H)*.70);bg.addColorStop(0,'rgba(13,18,31,.34)');bg.addColorStop(.55,'rgba(5,8,16,.19)');bg.addColorStop(1,'rgba(0,0,0,0)');out.fillStyle=bg;out.fillRect(0,0,W,H);
+ let floorGlow=out.createRadialGradient(W*.52,H*.79,8,W*.52,H*.79,W*.42);floorGlow.addColorStop(0,'rgba(91,107,142,.075)');floorGlow.addColorStop(1,'rgba(0,0,0,0)');out.fillStyle=floorGlow;out.fillRect(0,0,W,H);
+ out.globalCompositeOperation='lighter';out.globalAlpha=.92;out.drawImage(glowFull,0,0);out.globalAlpha=1;out.drawImage(trailCanvas,0,0);out.globalCompositeOperation='source-over';drawHud(t,info);
+}
+function render(t){try{const info=drawFrame(t);compose(t,info)}catch(error){paused=true;console.error('Diamond renderer error:',error);toast('Render paused: '+(error&&error.message?error.message:'unknown error'));setPause(true)}}
+function resize(){dpr=Math.min(window.devicePixelRatio||1,2);const rect=stage.getBoundingClientRect();view.width=Math.round(rect.width*dpr);view.height=Math.round(rect.height*dpr);render(time)}
+function toast(s){toastEl.textContent=s;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),1200)}
+function restart(){time=0;dragYaw=0;trailCtx.clearRect(0,0,W,H);render(0);last=0;toast('Animation restarted')}
+function setPause(v){paused=v;pauseBtn.textContent=paused?'▶':'Ⅱ';pauseBtn.setAttribute('aria-label',paused?'Resume':'Pause');last=0;toast(paused?'Paused':'Resumed')}
+function save(){const a=document.createElement('a');a.download='diamond-ring-spectral-studio-v11.png';a.href=view.toDataURL('image/png');a.click();toast('PNG saved')}
+function toggleFull(){if(!document.fullscreenElement)stage.requestFullscreen?.().then(()=>resize()).catch(()=>toast('Fullscreen unavailable'));else document.exitFullscreen?.()}
+function tick(stamp){requestAnimationFrame(tick);if(!last)last=stamp;if(stamp-lastRender<(MOBILE?55:33))return;const dt=Math.min((stamp-last)/1000,1/15);last=stamp;lastRender=stamp;if(!paused){time+=dt;if(time>=LOOP){time=0;trailCtx.clearRect(0,0,W,H)}render(time)}}
+pauseBtn.addEventListener('click',()=>setPause(!paused));labBtn.addEventListener('click',()=>{const open=labPanel.classList.toggle('open');labPanel.setAttribute('aria-hidden',String(!open));});document.getElementById('restart').addEventListener('click',restart);document.getElementById('save').addEventListener('click',save);document.getElementById('full').addEventListener('click',toggleFull);
+view.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};view.setPointerCapture?.(e.pointerId)});view.addEventListener('pointermove',e=>{if(!drag)return;dragYaw+=(e.clientX-drag.x)*.006;drag.x=e.clientX;drag.y=e.clientY});view.addEventListener('pointerup',()=>drag=null);view.addEventListener('pointercancel',()=>drag=null);
+document.addEventListener('visibilitychange',()=>{opticsBuildPaused=document.hidden;if(!opticsBuildPaused)startOpticsBuild()});
+window.addEventListener('resize',resize);window.addEventListener('keydown',e=>{if(e.target&&['INPUT','TEXTAREA'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();setPause(!paused)}else if(e.key.toLowerCase()==='r')restart();else if(e.key.toLowerCase()==='s')save();else if(e.key.toLowerCase()==='f')toggleFull()});
+resize();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
