@@ -1,0 +1,138 @@
+&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="utf-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"&gt;
+&lt;meta name="theme-color" content="#000000"&gt;
+&lt;meta name="description" content="A browser-based ASCII diamond ring animation, faithfully ported from the JIN2 point-cloud renderer."&gt;
+&lt;title&gt;Diamond Ring — ASCII Point Cloud&lt;/title&gt;
+&lt;style&gt;
+:root{color-scheme:dark;background:#000}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}body{display:grid;place-items:center;color:#cbd1df;font-family:Consolas,Menlo,"DejaVu Sans Mono",monospace;user-select:none;-webkit-user-select:none}.stage{position:relative;width:min(100vw,112.5vh);height:min(88.888889vw,100vh);aspect-ratio:9/8;overflow:hidden;background:#000;isolation:isolate}canvas{display:block;width:100%;height:100%;background:#000}.controls{position:absolute;right:clamp(10px,2.5vw,28px);bottom:clamp(10px,2.5vw,25px);display:flex;gap:7px;opacity:.18;transition:opacity .25s}.stage:hover .controls,.controls:focus-within{opacity:.9}.control{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid rgba(190,205,230,.2);border-radius:50%;background:rgba(5,8,13,.65);color:#dbe4f3;font:15px/1 monospace;cursor:pointer;backdrop-filter:blur(5px)}.control:hover{background:rgba(30,40,58,.85);border-color:rgba(210,225,250,.55)}.hint{position:absolute;right:clamp(10px,2.5vw,28px);top:clamp(10px,2.5vw,25px);font-size:8px;letter-spacing:.12em;color:rgba(184,196,218,.16);pointer-events:none}.toast{position:absolute;top:12%;left:50%;transform:translate(-50%,-6px);padding:6px 10px;border:1px solid rgba(205,220,244,.18);border-radius:20px;background:rgba(8,11,17,.9);font-size:10px;color:#e2e9f5;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:520px){.controls{opacity:.45}.hint{display:none}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;main class="stage" id="stage" aria-label="ASCII three-dimensional diamond ring animation"&gt;
+  &lt;canvas id="view" aria-label="A detailed rotating diamond ring drawn from animated ASCII characters"&gt;&lt;/canvas&gt;
+  &lt;div class="hint"&gt;SPACE PAUSE · R RESTART · S SAVE · DRAG TO ROTATE&lt;/div&gt;
+  &lt;nav class="controls" aria-label="Animation controls"&gt;
+    &lt;button class="control" id="pause" title="Pause / resume (Space)" aria-label="Pause"&gt;Ⅱ&lt;/button&gt;
+    &lt;button class="control" id="restart" title="Restart (R)" aria-label="Restart"&gt;↻&lt;/button&gt;
+    &lt;button class="control" id="save" title="Save PNG (S)" aria-label="Save image"&gt;↓&lt;/button&gt;
+    &lt;button class="control" id="full" title="Fullscreen (F)" aria-label="Fullscreen"&gt;⛶&lt;/button&gt;
+  &lt;/nav&gt;
+  &lt;div class="toast" id="toast"&gt;&lt;/div&gt;
+&lt;/main&gt;
+&lt;script&gt;
+(()=>{'use strict';
+// Fixed virtual surface and glyph grid match the original 1080×960 / 6×9 layout.
+const W=1080,H=960,CW=6,CH=9,COLS=180,ROWS=106,ASPECT=(COLS*CW)/(ROWS*CH),TAU=Math.PI*2;
+const LOOP=20,BUILD=3.2,DRAW0=.3,DRAW1=5.6,TURN=12,FLOOR=-.78;
+const BAND=0,PRONG=1,GEM=2,GLINT=3,FIRE_R=4,FIRE_B=5,FIRE_G=6,DUST=7,REFL=8,STAR=9;
+const POOLS=['1il!;:','rtfjcvxz=+','aeoun0{}[]&lt;&gt;','08B$#&amp;%Q'];
+const COLORS=[[214,220,232],[232,236,244],[226,238,255],[255,255,255],[255,170,200],[160,210,255],[255,230,160],[255,214,140],[150,150,165],[120,120,140]];
+const CELL_COUNT=COLS*ROWS;
+const stage=document.getElementById('stage'),view=document.getElementById('view'),out=view.getContext('2d',{alpha:false,desynchronized:true});
+const pauseBtn=document.getElementById('pause'),toastEl=document.getElementById('toast');
+const frameCanvas=document.createElement('canvas');frameCanvas.width=W;frameCanvas.height=H;const frameCtx=frameCanvas.getContext('2d',{alpha:false});
+const trailCanvas=document.createElement('canvas');trailCanvas.width=W;trailCanvas.height=H;const trailCtx=trailCanvas.getContext('2d');
+const glowA=document.createElement('canvas');glowA.width=W/4;glowA.height=H/4;const glowACtx=glowA.getContext('2d');
+const glowB=document.createElement('canvas');glowB.width=W/8;glowB.height=H/8;const glowBCtx=glowB.getContext('2d');
+const glowFull=document.createElement('canvas');glowFull.width=W;glowFull.height=H;const glowFullCtx=glowFull.getContext('2d');
+let dpr=1,paused=false,time=0,last=0,lastRender=0,drag=null,dragYaw=0,toastTimer=0;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const smooth=x=&gt;{x=clamp(x,0,1);return x*x*(3-2*x)};
+const norm=(x,y,z)=&gt;{const q=Math.hypot(x,y,z)||1;return [x/q,y/q,z/q]};
+const dot=(a,b)=&gt;a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=&gt;[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function rng(seed){let x=seed&gt;&gt;&gt;0;return ()=>{x+=0x6D2B79F5;let t=x;t=Math.imul(t^(t&gt;&gt;&gt;15),t|1);t^=t+Math.imul(t^(t&gt;&gt;&gt;7),t|61);return((t^(t&gt;&gt;&gt;14))&gt;&gt;&gt;0)/4294967296}}
+function makeGeometry(){
+ const P=[],N=[],K=[],FACE=[],ORDER=[],PART=[];
+ const add=(x,y,z,nx,ny,nz,kind,face=0)=&gt;{const nn=norm(nx,ny,nz);P.push(x,y,z);N.push(...nn);K.push(kind);FACE.push(face);};
+ const RB=.55,TUBE=.065;
+ for(let j=0;j&lt;44;j++){const b=TAU*j/44,cb=Math.cos(b),sb=Math.sin(b);for(let i=0;i&lt;520;i++){const a=TAU*i/520,ca=Math.cos(a),sa=Math.sin(a),rr=TUBE*(1-.35*Math.pow(Math.max(0,sa),6)),nx=ca*cb,ny=sa*cb,nz=sb;add(ca*RB+nx*rr,sa*RB+ny*rr,nz*rr*1.5,nx,ny,nz,BAND)}}
+ for(let i=0;i&lt;4;i++){const a=TAU*(i+.5)/4,base=[.08*Math.cos(a),RB+.02,.08*Math.sin(a)],tip=[.265*Math.cos(a),.97,.265*Math.sin(a)],d=norm(tip[0]-base[0],tip[1]-base[1],tip[2]-base[2]),s=norm(...cross(d,[0,0,1])),w=norm(...cross(s,d));for(let j=0;j&lt;12;j++){const ph=TAU*j/12;for(let k=0;k&lt;40;k++){const u=k/39,nx=Math.cos(ph)*s[0]+Math.sin(ph)*w[0],ny=Math.cos(ph)*s[1]+Math.sin(ph)*w[1],nz=Math.cos(ph)*s[2]+Math.sin(ph)*w[2];add(base[0]+u*(tip[0]-base[0])+nx*.022,base[1]+u*(tip[1]-base[1])+ny*.022,base[2]+u*(tip[2]-base[2])+nz*.022,nx,ny,nz,PRONG)}}}
+ const GY=.88,GR=.25,TY=1,TR=.135,CY=.66;let faceId=0;
+ const tri=(a,b,c,n)=&gt;{const nn=norm(...n);for(let j=0;j&lt;=15;j++)for(let i=0;i&lt;=15-j;i++){const u=i/15,v=j/15;add(a[0]+(b[0]-a[0])*u+(c[0]-a[0])*v,a[1]+(b[1]-a[1])*u+(c[1]-a[1])*v,a[2]+(b[2]-a[2])*u+(c[2]-a[2])*v,...nn,GEM,faceId)}faceId++};
+ for(let i=0;i&lt;16;i++){const a0=TAU*i/16,a1=TAU*(i+1)/16,g0=[GR*Math.cos(a0),GY,GR*Math.sin(a0)],g1=[GR*Math.cos(a1),GY,GR*Math.sin(a1)],t0=[TR*Math.cos(a0),TY,TR*Math.sin(a0)],t1=[TR*Math.cos(a1),TY,TR*Math.sin(a1)],culet=[0,CY,0];let crown=cross([g1[0]-g0[0],g1[1]-g0[1],g1[2]-g0[2]],[t0[0]-g0[0],t0[1]-g0[1],t0[2]-g0[2]]);if(crown[1]&lt;0)crown=crown.map(v=&gt;-v);tri(g0,g1,t0,crown);tri(g1,t1,t0,[crown[0],crown[1]*1.15,crown[2]]);let pav=cross([culet[0]-g0[0],culet[1]-g0[1],culet[2]-g0[2]],[g1[0]-g0[0],g1[1]-g0[1],g1[2]-g0[2]]);if(pav[1]&gt;0)pav=pav.map(v=&gt;-v);tri(g0,g1,culet,pav);tri([0,TY,0],t0,t1,[0,1,0]);}
+ const count=K.length,p=new Float32Array(P),n=new Float32Array(N),kind=new Uint8Array(K),face=new Uint8Array(FACE),order=new Float32Array(count),part=new Int16Array(count);
+ for(let i=0;i&lt;count;i++){const x=p[i*3],y=p[i*3+1];if(kind[i]===BAND)order[i]=Math.abs(Math.atan2(Math.sin(Math.atan2(y,x)+Math.PI/2),Math.cos(Math.atan2(y,x)+Math.PI/2)))/Math.PI;else if(kind[i]===PRONG)order[i]=1+(y-RB)/(1-RB)*.25;else order[i]=1.25+(y-CY)/(1-CY)*.45;part[i]=kind[i]===GEM?10+face[i]:kind[i]}
+ let maxOrder=0;for(let i=0;i&lt;count;i++)if(order[i]&gt;maxOrder)maxOrder=order[i];return{p,n,kind,face,order,part,count,maxOrder};
+}
+const geom=makeGeometry();
+function makeSeeds(){
+ const r=rng(13),spk=new Array(2600);for(let i=0;i&lt;spk.length;i++){const a=[r(),r(),r(),r(),r()],vi=Math.floor(a[0]*geom.count);spk[i]={vi,born:DRAW0+geom.order[vi]/geom.maxOrder*(DRAW1-DRAW0),life:.9+.9*a[1],a:a[2]*TAU,speed:.4+.6*a[3],up:.5+.9*a[4],spark:a[3]&gt;.7}}
+ const rd=rng(5),dust=Array.from({length:520},()=>[rd(),rd(),rd(),rd()]);
+ const rs=rng(2),stars=Array.from({length:90},()=>[rs()*10-5,rs()*6-1.5,rs()*TAU]);
+ const rb=rng(14),burst=Array.from({length:700},()=>[rb(),rb(),rb()]);
+ const rh=rng(15),halo=Array.from({length:900},()=>[rh(),rh()]);
+ return{spk,dust,stars,burst,halo};
+}
+const seeds=makeSeeds();
+// Camera basis is identical to the Python look-at camera.
+const eye=[0,.85,4.7],target=[0,.22,0],fwd=norm(target[0]-eye[0],target[1]-eye[1],target[2]-eye[2]),right=norm(...cross(fwd,[0,1,0])),up=cross(right,fwd),viewDir=norm(-fwd[0],-fwd[1],-fwd[2]),key=norm(0,.8,.6);
+// Cell buffers: nearest visible surface plus particle layer, matching the original depth-buffer pass.
+const partGrid=new Int16Array(CELL_COUNT),depthGrid=new Float32Array(CELL_COUNT),lumGrid=new Float32Array(CELL_COUNT),tagGrid=new Uint8Array(CELL_COUNT),charGrid=new Uint16Array(CELL_COUNT),particleDepth=new Float32Array(CELL_COUNT),edgeX=new Int8Array(CELL_COUNT),edgeY=new Int8Array(CELL_COUNT),edgeGrid=new Uint8Array(CELL_COUNT),hashGrid=new Uint16Array(CELL_COUNT),baseShade=new Float32Array(geom.count),revealMask=new Uint8Array(geom.count);
+for(let y=0;y&lt;ROWS;y++)for(let x=0;x&lt;COLS;x++)hashGrid[y*COLS+x]=(y*7919+x*104729)%9973;
+function clearGrid(){partGrid.fill(-1);depthGrid.fill(99);lumGrid.fill(0);tagGrid.fill(0);charGrid.fill(0);particleDepth.fill(99);edgeGrid.fill(0);edgeX.fill(0);edgeY.fill(0)}
+const FILL=POOLS.map(pool=&gt;Array.from({length:12},(_,i)=&gt;pool[i%pool.length]));
+function project(x,y,z){const dx=x-eye[0],dy=y-eye[1],dz=z-eye[2],cx=dx*right[0]+dy*right[1]+dz*right[2],cy=dx*up[0]+dy*up[1]+dz*up[2],cz=dx*fwd[0]+dy*fwd[1]+dz*fwd[2];if(cz&lt;=.2)return -1;const ix=(.5+cx/cz*1.45)*COLS|0,iy=(.5-cy/cz*1.45*ASPECT)*ROWS|0;if(ix&lt;0||ix&gt;=COLS||iy&lt;0||iy&gt;=ROWS)return -1;return (iy*COLS+ix)*65536+Math.floor(cz*10000)}
+function particle(x,y,z,bright,glyph,tag){if(bright&lt;=.02)return;const packed=project(x,y,z);if(packed&lt;0)return;const idx=(packed/65536)|0,dep=(packed%65536)/10000;if(partGrid[idx]&gt;=0)return;if(dep&gt;=particleDepth[idx])return;particleDepth[idx]=dep;partGrid[idx]=-2;lumGrid[idx]=clamp(bright,0,1);tagGrid[idx]=tag;charGrid[idx]=glyph.charCodeAt(0)}
+const CHAR_ID=new Map();let allChars=[...new Set((' .,:~+*^01|/\\_#()x'+POOLS.join('')).split(''))];allChars.forEach((ch,i)=&gt;CHAR_ID.set(ch,i+1));
+const glyphAtlas=new Uint8Array(allChars.length*CW*CH);
+(()=>{const c=document.createElement('canvas');c.width=CW;c.height=CH;const g=c.getContext('2d',{willReadFrequently:true});g.font='10px Consolas, Menlo, "DejaVu Sans Mono", "Courier New", monospace';g.textAlign='center';g.textBaseline='middle';for(let i=0;i&lt;allChars.length;i++){g.clearRect(0,0,CW,CH);g.fillStyle='#fff';g.fillText(allChars[i],CW/2,CH/2+0.25);const d=g.getImageData(0,0,CW,CH).data;for(let k=0;k&lt;CW*CH;k++)glyphAtlas[i*CW*CH+k]=d[k*4+3]}})();
+function putGlyph(index,ch){charGrid[index]=CHAR_ID.get(ch)||1}
+let imageData=frameCtx.createImageData(W,H),pixels=imageData.data;
+function drawFrame(t){
+ clearGrid();const yaw=TAU*Math.max(t-DRAW1-.6,0)/TURN+dragYaw,cy=Math.cos(yaw),sy=Math.sin(yaw),rim=norm(Math.cos(t*.9),.5,Math.sin(t*.9)),halfK=norm(key[0]+viewDir[0],key[1]+viewDir[1],key[2]+viewDir[2]),halfR=norm(rim[0]+viewDir[0],rim[1]+viewDir[1],rim[2]+viewDir[2]);
+ const head=(t-DRAW0)/(DRAW1-DRAW0)*geom.maxOrder,fl=1+.8*Math.exp(-Math.pow((t-DRAW1-.15)/.18,2));let glintCount=0;
+ // Main geometry pass: 33,504 samples, flat facet normals and per-pixel depth selection.
+ for(let i=0;i&lt;geom.count;i++){const k=smooth((head-geom.order[i])/.06);if(k&lt;.96){revealMask[i]=0;continue}revealMask[i]=1;const j=i*3,x=geom.p[j],y=geom.p[j+1],z=geom.p[j+2],rx=cy*x+sy*z,rz=-sy*x+cy*z,nx=cy*geom.n[j]+sy*geom.n[j+2],ny=geom.n[j+1],nz=-sy*geom.n[j]+cy*geom.n[j+2],kind=geom.kind[i],diff=Math.max(0,nx*key[0]+ny*key[1]+nz*key[2]),spec=Math.pow(Math.max(0,nx*halfK[0]+ny*halfK[1]+nz*halfK[2]),30)+.9*Math.pow(Math.max(0,nx*halfR[0]+ny*halfR[1]+nz*halfR[2]),24);let shade=kind!==GEM?.5+.35*diff+.9*spec:.8+.2*diff+1.4*spec;baseShade[i]=shade;let tag=kind;if(kind===GEM&amp;&amp;spec&gt;.18){const fire=(geom.face[i]+Math.floor(t*7))%4;tag=fire===0?GLINT:fire===1?FIRE_R:fire===2?FIRE_B:FIRE_G;glintCount++}else if(kind!==GEM&amp;&amp;spec&gt;.5){tag=GLINT}const packed=project(rx,y,rz);if(packed&lt;0)continue;const idx=(packed/65536)|0,dep=(packed%65536)/10000;if(t&gt;DRAW1&amp;&amp;t&lt;DRAW1+.45)shade*=fl;if(dep&gt;=depthGrid[idx])continue;depthGrid[idx]=dep;partGrid[idx]=geom.part[i];lumGrid[idx]=clamp(shade,0,1.4);tagGrid[idx]=tag;}
+ // Floor reflection uses every eligible metal sample, not a sparse subset.
+ for(let i=0;i&lt;geom.count;i++){if(!revealMask[i])continue;const j=i*3,x=geom.p[j],y=geom.p[j+1],z=geom.p[j+2],rx=cy*x+sy*z,rz=-sy*x+cy*z;particle(rx,2*FLOOR-y-.06,rz,.22*clamp(baseShade[i],0,1.2),'.',REFL)}
+ // Distant star field.
+ for(const s of seeds.stars)particle(s[0],s[1],-6,.1+.1*Math.sin(t*2+s[2]),'.',STAR);
+ // Drifting dust cloud.
+ for(const d of seeds.dust){const a=d[0]*TAU+t*(.3+.5*d[1]),r=.9+.8*d[2],y=((d[3]*2.4+t*.08)%2.4)-.8,tw=(.25+.75*Math.pow(Math.max(0,Math.sin(t*(2+3*d[1])+d[0]*40)),4))*smooth((t-BUILD+.5)/1.5);particle(Math.cos(a)*r,y,Math.sin(a)*r*.7,tw,tw&gt;.7?'*':'.',DUST)}
+ // Sparks born along the writing head, then accelerated downward by gravity.
+ for(const s of seeds.spk){const age=t-s.born;if(age&lt;=0||age&gt;=s.life)continue;const j=s.vi*3,x=geom.p[j],y=geom.p[j+1],z=geom.p[j+2],rx=x,rz=z,vx=Math.cos(s.a)*s.speed,vz=Math.sin(s.a)*s.speed,px=rx+vx*age,py=y+s.up*age-1.1*age*age,pz=rz+vz*age,fade=Math.pow(Math.max(0,1-age/s.life),1.3)*(.6+.4*Math.sin(age*30+s.a));particle(px,py,pz,fade,s.spark?'*':fade&gt;.45?'+':'.',s.spark?FIRE_G:DUST)}
+ // Expanding completion burst.
+ const ba=t-DRAW1-.1;if(ba&gt;=0&amp;&amp;ba&lt;=2.2){const fade=Math.pow(Math.max(0,1-ba/2.2),1.5),radius=.85+2.4*(1-Math.exp(-ba*2));for(const b of seeds.burst){const r=radius*(.97+.06*b[1]),x=Math.cos(b[0]*TAU)*r,y=.42+Math.sin(b[0]*TAU)*r,z=(b[2]-.5)*.05-.4,tag=b[1]&lt;.25?FIRE_R:b[1]&lt;.45?FIRE_B:b[1]&lt;.6?FIRE_G:GLINT;particle(x,y,z,fade,'+',tag)}}
+ // Two fine, tilted orbital particle paths.
+ const haloOn=smooth((t-DRAW1-.3)/1.5);if(haloOn&gt;0)for(let i=0;i&lt;seeds.halo.length;i++){const h=seeds.halo[i],tilt=i&lt;450?.55:-.55,a=h[0]*TAU+t*(i&lt;450?.9:-.7),x0=Math.cos(a)*1.05,y0=Math.sin(a)*.32,z0=Math.sin(a)*.95,x=x0*Math.cos(tilt)-y0*Math.sin(tilt),y=x0*Math.sin(tilt)+y0*Math.cos(tilt)+.42,headGlow=(h[0]*37+t*1.3)%1,glow=haloOn*(.15+.85*Math.max(0,1-headGlow*3))*(.6+.4*Math.sin(t*6+h[1]*TAU));particle(x,y,z0,glow,h[1]&gt;.5?'.':'*',h[1]&gt;.5?DUST:FIRE_B)}
+ // Body contours and luminance-driven glyph assignment.
+ for(let y=0;y&lt;ROWS;y++)for(let x=0;x&lt;COLS;x++){const idx=y*COLS+x,part=partGrid[idx];if(part&lt;0)continue;let gx=0,gy=0,isEdge=false;for(let dy=-1;dy&lt;=1;dy++)for(let dx=-1;dx&lt;=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy,ni=(xx&lt;0||xx&gt;=COLS||yy&lt;0||yy&gt;=ROWS)?-1:partGrid[yy*COLS+xi],nz=(xx&lt;0||xx&gt;=COLS||yy&lt;0||yy&gt;=ROWS)?99:depthGrid[yy*COLS+xi];if(ni&lt;0||(ni!==part&amp;&amp; z&gt;depthGrid[idx]+.02)){gx+=dx;gy+=dy;if(!dx||!dy)isEdge=true}}if(isEdge){edgeGrid[idx]=1;edgeX[idx]=gx;edgeY[idx]=gy}}
+ let visible=0;
+ for(let i=0;i&lt;CELL_COUNT;i++){const part=partGrid[i];if(part&lt;0)continue;const lum=lumGrid[i],tag=tagGrid[i],h=hashGrid[i];let ch;if(tag&gt;=GLINT&amp;&amp;tag&lt;=FIRE_G)ch='*';else if(edgeGrid[i]){const gx=edgeX[i],gy=edgeY[i],ax=Math.abs(gx),ay=Math.abs(gy);ch=(ax+ay)===0?'+':ax&gt;2*ay?'|':ay&gt;2*ax?(gy&gt;0?'_':'-'):(gx*gy&gt;0?'/':'\\')}else{const level=clamp(Math.floor(lum*3.2),0,3),shift=(Math.floor(t*4+h%11))%12;ch=FILL[level][(h+shift)%12]}putGlyph(i,ch);lumGrid[i]=edgeGrid[i]?Math.max(.75,lum):clamp(lum,.3,1);visible++}
+ // Particle glyphs are composited only into otherwise empty cells, as in the original renderer.
+ for(let i=0;i&lt;CELL_COUNT;i++)if(partGrid[i]===-2){const fs=lumGrid[i],tag=tagGrid[i],y=(i/COLS)|0,x=i%COLS;let ch;if(tag===REFL){const level=clamp(Math.floor(fs*6),0,1),arr=FILL[level];ch=arr[(y*31+x)%12]}else if(tag===DUST)ch=fs&gt;.7?'*':fs&gt;.35?'+':'.';else if(tag===STAR)ch='.';else ch=(y+x)%3===0?'&amp;':(y+x)%3===1?'8':'%';putGlyph(i,ch)}
+ // Six brightest gem glints cast fine ASCII star rays.
+ const bright=[];for(let i=0;i&lt;CELL_COUNT;i++){const tag=tagGrid[i];if(partGrid[i]&gt;=0&amp;&amp;tag&gt;=GLINT&amp;&amp;tag&lt;=FIRE_G)bright.push([lumGrid[i]+(hashGrid[i]%7)*.01,i])}bright.sort((a,b)=&gt;b[0]-a[0]);for(let n=0;n&lt;Math.min(6,bright.length);n++){if(bright[n][0]&lt;=0)break;const idx=bright[n][1],cy0=(idx/COLS)|0,cx0=idx%COLS,pulse=.5+.5*Math.sin(t*7+n*1.7),reach=(5+9*pulse)|0;for(let dist=1;dist&lt;=reach;dist++){const fade=1-dist/(reach+1);const rays=[[0,1,'-'],[0,-1,'-'],[1,0,'|'],[-1,0,'|']];for(const [dy,dx,ch] of rays){const yy=cy0+dy*dist,xx=cx0+dx*dist*2;if(yy&gt;=0&amp;&amp;yy&lt;ROWS&amp;&amp;xx&gt;=0&amp;&amp;xx&lt;COLS){const j=yy*COLS+xx;if(lumGrid[j]&lt;fade){putGlyph(j,ch);lumGrid[j]=fade;tagGrid[j]=GLINT}}}if(dist&lt;=Math.floor(reach/2)){for(const [dy,dx,ch] of [[1,1,'\\'],[-1,-1,'\\'],[1,-1,'/'],[-1,1,'/']]){const yy=cy0+dy*dist,xx=cx0+dx*dist;if(yy&gt;=0&amp;&amp;yy&lt;ROWS&amp;&amp;xx&gt;=0&amp;&amp;xx&lt;COLS){const j=yy*COLS+xx;if(lumGrid[j]&lt;fade*.7){putGlyph(j,ch);lumGrid[j]=fade*.7;tagGrid[j]=GLINT}}}}}putGlyph(idx,'*');lumGrid[idx]=1}
+ // Rasterize a pre-rendered 6×9 glyph atlas into the exact virtual-resolution image.
+ pixels.fill(0);for(let i=0;i&lt;CELL_COUNT;i++){const gi=charGrid[i];if(!gi)continue;const tag=tagGrid[i],rgb=COLORS[tag]||COLORS[0],alpha=clamp(lumGrid[i],0,1),gx=(i%COLS)*CW,gy=((i/COLS)|0)*CH,off=(gi-1)*CW*CH;for(let py=0;py&lt;CH;py++){let dst=((gy+py)*W+gx)*4,src=off+py*CW;for(let px=0;px&lt;CW;px++){const m=glyphAtlas[src+px];if(!m)continue;const v=alpha*m/255;pixels[dst+px*4]=rgb[0]*v;pixels[dst+px*4+1]=rgb[1]*v;pixels[dst+px*4+2]=rgb[2]*v;pixels[dst+px*4+3]=255}}}for(let i=3;i&lt;pixels.length;i+=4)if(pixels[i]===0)pixels[i]=255;frameCtx.putImageData(imageData,0,0);
+ return{yaw,glintCount,visible};
+}
+function drawHud(t,info){const deg=((info.yaw/TAU*360)%360+360)%360;out.save();out.setTransform(view.width/W,0,0,view.height/H,0,0);out.font='17px Consolas, Menlo, "DejaVu Sans Mono", monospace';out.textBaseline='alphabetic';out.fillStyle='rgba(120,112,128,.76)';out.fillText('@jin_22ee · 2026',64,H-70);out.fillStyle='rgba(110,104,120,.9)';out.fillText(`rotation ${deg.toFixed(2).padStart(6,'0')}°   glints ${String(info.glintCount).padStart(4,' ')}`,64,H-44);out.fillText(`letters ${info.visible.toLocaleString('en-US').padStart(5,' ')}`,64,H-18);out.fillStyle='#ff7ab6';out.beginPath();out.arc(W-135,30,3,0,TAU);out.fill();out.fillStyle='#ff7ab6';out.fillText(`t ${t.toFixed(2).padStart(5,'0')}s`,W-120,36);out.restore()}
+function compose(t,info){
+ // Half-life persistence, then maximum blend, matching Pygame's trail surface.
+ trailCtx.save();trailCtx.globalCompositeOperation='source-over';trailCtx.fillStyle='rgba(0,0,0,.5)';trailCtx.fillRect(0,0,W,H);trailCtx.globalCompositeOperation='lighten';trailCtx.drawImage(frameCanvas,0,0);trailCtx.restore();
+ // Two independently downsampled blur/glow passes, close to the original glow stack.
+ glowACtx.clearRect(0,0,glowA.width,glowA.height);glowACtx.imageSmoothingEnabled=true;glowACtx.drawImage(trailCanvas,0,0,glowA.width,glowA.height);glowFullCtx.clearRect(0,0,W,H);glowFullCtx.save();glowFullCtx.filter='blur(1.25px)';glowFullCtx.drawImage(glowA,0,0,W,H);glowFullCtx.restore();
+ glowBCtx.clearRect(0,0,glowB.width,glowB.height);glowBCtx.imageSmoothingEnabled=true;glowBCtx.drawImage(trailCanvas,0,0,glowB.width,glowB.height);glowFullCtx.save();glowFullCtx.globalCompositeOperation='lighter';glowFullCtx.globalAlpha=.6;glowFullCtx.filter='blur(2.75px)';glowFullCtx.drawImage(glowB,0,0,W,H);glowFullCtx.restore();
+ const scaleX=view.width/W,scaleY=view.height/H;out.setTransform(scaleX,0,0,scaleY,0,0);out.globalCompositeOperation='source-over';out.globalAlpha=1;out.fillStyle='#000';out.fillRect(0,0,W,H);out.globalCompositeOperation='lighter';out.globalAlpha=.75;out.drawImage(glowFull,0,0);out.globalAlpha=1;out.drawImage(trailCanvas,0,0);out.globalCompositeOperation='source-over';drawHud(t,info);
+}
+function render(t){const info=drawFrame(t);compose(t,info)}
+function resize(){dpr=Math.min(window.devicePixelRatio||1,2);const rect=stage.getBoundingClientRect();view.width=Math.round(rect.width*dpr);view.height=Math.round(rect.height*dpr);render(time)}
+function toast(s){toastEl.textContent=s;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),1200)}
+function restart(){time=0;dragYaw=0;trailCtx.clearRect(0,0,W,H);render(0);last=0;toast('Animation restarted')}
+function setPause(v){paused=v;pauseBtn.textContent=paused?'▶':'Ⅱ';pauseBtn.setAttribute('aria-label',paused?'Resume':'Pause');last=0;toast(paused?'Paused':'Resumed')}
+function save(){const a=document.createElement('a');a.download='diamond-ring-ascii.png';a.href=view.toDataURL('image/png');a.click();toast('PNG saved')}
+function toggleFull(){if(!document.fullscreenElement)stage.requestFullscreen?.().then(()=>resize()).catch(()=>toast('Fullscreen unavailable'));else document.exitFullscreen?.()}
+function tick(stamp){requestAnimationFrame(tick);if(!last)last=stamp;if(stamp-lastRender&lt;33)return;const dt=Math.min((stamp-last)/1000,1/15);last=stamp;lastRender=stamp;if(!paused){time+=dt;if(time&gt;=LOOP){time=0;trailCtx.clearRect(0,0,W,H)}render(time)}}
+pauseBtn.addEventListener('click',()=>setPause(!paused));document.getElementById('restart').addEventListener('click',restart);document.getElementById('save').addEventListener('click',save);document.getElementById('full').addEventListener('click',toggleFull);
+view.addEventListener('pointerdown',e=&gt;{drag={x:e.clientX,y:e.clientY};view.setPointerCapture?.(e.pointerId)});view.addEventListener('pointermove',e=&gt;{if(!drag)return;dragYaw+=(e.clientX-drag.x)*.006;drag.x=e.clientX;drag.y=e.clientY;render(time)});view.addEventListener('pointerup',()=>drag=null);view.addEventListener('pointercancel',()=>drag=null);
+window.addEventListener('resize',resize);window.addEventListener('keydown',e=&gt;{if(e.target&amp;&amp;['INPUT','TEXTAREA'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();setPause(!paused)}else if(e.key.toLowerCase()==='r')restart();else if(e.key.toLowerCase()==='s')save();else if(e.key.toLowerCase()==='f')toggleFull()});
+resize();requestAnimationFrame(tick);
+})();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
