@@ -1,12 +1,12 @@
-&lt;!doctype html&gt;
-&lt;html lang="en"&gt;
-&lt;head&gt;
-&lt;meta charset="utf-8"&gt;
-&lt;meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"&gt;
-&lt;meta name="theme-color" content="#030405"&gt;
-&lt;meta name="description" content="An independent browser recreation of JIN2's ASCII diamond ring animation."&gt;
-&lt;title&gt;Diamond Ring — JIN2 ASCII&lt;/title&gt;
-&lt;style&gt;
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#030405">
+<meta name="description" content="An independent browser recreation of JIN2's ASCII diamond ring animation.">
+<title>Diamond Ring — JIN2 ASCII</title>
+<style>
   :root { color-scheme: dark; --pink:#ff8bb8; --silver:#dce4f2; --muted:rgba(204,211,226,.48); }
   * { box-sizing:border-box; }
   html,body { width:100%; height:100%; margin:0; overflow:hidden; background:#030405; }
@@ -36,37 +36,37 @@
     .hint { display:none; }
   }
   @media(prefers-reduced-motion:reduce) { .controls,.control,.toast { transition:none; } }
-&lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;main class="stage" id="stage" aria-label="Three-dimensional ASCII diamond ring"&gt;
-  &lt;canvas id="ring" aria-label="A sparkling three-dimensional diamond ring made from light and ASCII characters"&gt;&lt;/canvas&gt;
-  &lt;div class="vignette"&gt;&lt;/div&gt;
-  &lt;div class="timecode"&gt;&lt;span id="clock"&gt;t 00.00s&lt;/span&gt;&lt;/div&gt;
-  &lt;div class="signature"&gt;
-    &lt;div class="name"&gt;JIN2 · @jin_22ee · 2026&lt;/div&gt;
-    &lt;div id="metrics"&gt;rotation 000.00° &amp;nbsp; glints 0000&lt;/div&gt;
-    &lt;div id="letters"&gt;letters 00000&lt;/div&gt;
-  &lt;/div&gt;
-  &lt;div class="hint"&gt;DRAG TO ORBIT &amp;nbsp; · &amp;nbsp; SPACE PAUSE &amp;nbsp; · &amp;nbsp; R RESTART&lt;/div&gt;
-  &lt;nav class="controls" aria-label="Animation controls"&gt;
-    &lt;button class="control" id="pause" title="Pause / resume (Space)" aria-label="Pause animation"&gt;
-      &lt;svg id="pauseIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"&gt;&lt;path d="M8 5v14M16 5v14"/&gt;&lt;/svg&gt;
-    &lt;/button&gt;
-    &lt;button class="control" id="restart" title="Restart (R)" aria-label="Restart animation"&gt;
-      &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M4 11a8 8 0 1 1 2.4 6.2"/&gt;&lt;path d="M4 4v7h7"/&gt;&lt;/svg&gt;
-    &lt;/button&gt;
-    &lt;button class="control" id="save" title="Save frame (S)" aria-label="Save frame"&gt;
-      &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/&gt;&lt;/svg&gt;
-    &lt;/button&gt;
-    &lt;button class="control" id="fullscreen" title="Fullscreen (F)" aria-label="Toggle fullscreen"&gt;
-      &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"&gt;&lt;path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4"/&gt;&lt;/svg&gt;
-    &lt;/button&gt;
-  &lt;/nav&gt;
-  &lt;div class="toast" id="toast" role="status" aria-live="polite"&gt;&lt;/div&gt;
-&lt;/main&gt;
-&lt;script&gt;
-(() =&gt; {
+</style>
+</head>
+<body>
+<main class="stage" id="stage" aria-label="Three-dimensional ASCII diamond ring">
+  <canvas id="ring" aria-label="A sparkling three-dimensional diamond ring made from light and ASCII characters"></canvas>
+  <div class="vignette"></div>
+  <div class="timecode"><span id="clock">t 00.00s</span></div>
+  <div class="signature">
+    <div class="name">JIN2 · @jin_22ee · 2026</div>
+    <div id="metrics">rotation 000.00° &nbsp; glints 0000</div>
+    <div id="letters">letters 00000</div>
+  </div>
+  <div class="hint">DRAG TO ORBIT &nbsp; · &nbsp; SPACE PAUSE &nbsp; · &nbsp; R RESTART</div>
+  <nav class="controls" aria-label="Animation controls">
+    <button class="control" id="pause" title="Pause / resume (Space)" aria-label="Pause animation">
+      <svg id="pauseIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg>
+    </button>
+    <button class="control" id="restart" title="Restart (R)" aria-label="Restart animation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 1 1 2.4 6.2"/><path d="M4 4v7h7"/></svg>
+    </button>
+    <button class="control" id="save" title="Save frame (S)" aria-label="Save frame">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg>
+    </button>
+    <button class="control" id="fullscreen" title="Fullscreen (F)" aria-label="Toggle fullscreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4"/></svg>
+    </button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</main>
+<script>
+(() => {
   'use strict';
 
   // Browser port of the original point-cloud geometry and lighting.
@@ -74,9 +74,9 @@
   const LOOP = 20, DRAW_START = .3, DRAW_END = 5.6, TURN = 12, FLOOR = -.78;
   let CELL_W = 6, CELL_H = 9, FONT_PX = 10;
   const BAND = 0, PRONG = 1, GEM = 2, GLINT = 3, FIRE_P = 4, FIRE_B = 5, FIRE_G = 6, DUST = 7, REFLECT = 8, STAR = 9;
-  const POOLS = ['1il!;:','rtfjcvxz=+','aeoun0{}[]&lt;&gt;','08B$#%Q'];
+  const POOLS = ['1il!;:','rtfjcvxz=+','aeoun0{}[]<>','08B$#%Q'];
   const GLYPHS = [...new Set((' .,:~+*^01|/\\-_#()x' + POOLS.join(''))).split('')];
-  const GLYPH_MAP = new Map(GLYPHS.map((c, i) =&gt; [c, i]));
+  const GLYPH_MAP = new Map(GLYPHS.map((c, i) => [c, i]));
   const COLORS = ['#9298a7','#bdc4d1','#e4e9f3','#ffffff','#fffaff','#ffb0ce','#a9d6ff','#ffe4a8','#858b9d','#aeb9cc'];
   const stage = document.getElementById('stage');
   const canvas = document.getElementById('ring');
@@ -88,14 +88,14 @@
   const pauseIcon = document.getElementById('pauseIcon');
   const toastEl = document.getElementById('toast');
 
-  const clamp = (v,a,b) =&gt; Math.max(a,Math.min(b,v));
-  const smooth = x =&gt; { x=clamp(x,0,1); return x*x*(3-2*x); };
-  const norm = (x,y,z) =&gt; { const q=Math.hypot(x,y,z)||1; return [x/q,y/q,z/q]; };
-  const dot = (a,b) =&gt; a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-  const cross = (a,b) =&gt; [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+  const smooth = x => { x=clamp(x,0,1); return x*x*(3-2*x); };
+  const norm = (x,y,z) => { const q=Math.hypot(x,y,z)||1; return [x/q,y/q,z/q]; };
+  const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const cross = (a,b) => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
   function rng(seed) {
-    let x=seed&gt;&gt;&gt;0;
-    return () =&gt; { x+=0x6D2B79F5; let t=x; t=Math.imul(t^(t&gt;&gt;&gt;15),t|1); t^=t+Math.imul(t^(t&gt;&gt;&gt;7),t|61); return ((t^(t&gt;&gt;&gt;14))&gt;&gt;&gt;0)/4294967296; };
+    let x=seed>>>0;
+    return () => { x+=0x6D2B79F5; let t=x; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; };
   }
 
   let cols=120, rows=100, aspect=1, cssW=720, cssH=900, dpr=1;
@@ -117,25 +117,25 @@
     const s={p:[],n:[],kind:[],face:[],order:[],part:[]};
     const R=.55, tube=.065;
     // Dense sampled torus: 520 x 44, matching the source geometry.
-    for(let i=0;i&lt;520;i++) {
+    for(let i=0;i<520;i++) {
       const a=TAU*i/520, ca=Math.cos(a), sa=Math.sin(a);
       const rr=tube*(1-.35*Math.pow(Math.max(0,sa),6));
-      for(let j=0;j&lt;44;j++) {
+      for(let j=0;j<44;j++) {
         const b=TAU*j/44, cb=Math.cos(b), sb=Math.sin(b);
         const nx=ca*cb, ny=sa*cb, nz=sb;
         pushPoint(s,[ca*R+nx*rr,sa*R+ny*rr,nz*rr*1.5],[nx,ny,nz],BAND,0);
       }
     }
     // Four tapered prongs.
-    for(let i=0;i&lt;4;i++) {
+    for(let i=0;i<4;i++) {
       const a=TAU*(i+.5)/4;
       const base=[.08*Math.cos(a),R+.02,.08*Math.sin(a)];
       const tip=[.265*Math.cos(a),.97,.265*Math.sin(a)];
       const d=norm(tip[0]-base[0],tip[1]-base[1],tip[2]-base[2]);
       const side=norm(d[1],-d[0],0), w=norm(...cross(side,d));
-      for(let k=0;k&lt;40;k++) {
+      for(let k=0;k<40;k++) {
         const u=k/39;
-        for(let j=0;j&lt;12;j++) {
+        for(let j=0;j<12;j++) {
           const phi=TAU*j/12;
           const nx=Math.cos(phi)*side[0]+Math.sin(phi)*w[0];
           const ny=Math.cos(phi)*side[1]+Math.sin(phi)*w[1];
@@ -149,30 +149,30 @@
     const GY=.88, GR=.25, TY=1, TR=.135, CY=.66;
     let faceId=1;
     function triangle(a,b,c,normal) {
-      for(let i=0;i&lt;=15;i++) for(let j=0;j&lt;=15-i;j++) {
+      for(let i=0;i<=15;i++) for(let j=0;j<=15-i;j++) {
         const u=i/15,v=j/15;
         const p=[a[0]+(b[0]-a[0])*u+(c[0]-a[0])*v,a[1]+(b[1]-a[1])*u+(c[1]-a[1])*v,a[2]+(b[2]-a[2])*u+(c[2]-a[2])*v];
         pushPoint(s,p,normal,GEM,faceId);
       }
       faceId++;
     }
-    for(let i=0;i&lt;16;i++) {
+    for(let i=0;i<16;i++) {
       const a0=TAU*i/16,a1=TAU*(i+1)/16;
       const g0=[GR*Math.cos(a0),GY,GR*Math.sin(a0)],g1=[GR*Math.cos(a1),GY,GR*Math.sin(a1)];
       const t0=[TR*Math.cos(a0),TY,TR*Math.sin(a0)],t1=[TR*Math.cos(a1),TY,TR*Math.sin(a1)];
       const culet=[0,CY,0];
       let crown=cross([g1[0]-g0[0],g1[1]-g0[1],g1[2]-g0[2]],[t0[0]-g0[0],t0[1]-g0[1],t0[2]-g0[2]]);
-      if(crown[1]&lt;0)crown=crown.map(v=&gt;-v);
+      if(crown[1]<0)crown=crown.map(v=>-v);
       triangle(g0,g1,t0,crown);
       triangle(g1,t1,t0,[crown[0],crown[1]*1.15,crown[2]]);
       let pav=cross([culet[0]-g0[0],culet[1]-g0[1],culet[2]-g0[2]],[g1[0]-g0[0],g1[1]-g0[1],g1[2]-g0[2]]);
-      if(pav[1]&gt;0)pav=pav.map(v=&gt;-v);
+      if(pav[1]>0)pav=pav.map(v=>-v);
       triangle(g0,g1,culet,pav);
       triangle([0,TY,0],t0,t1,[0,1,0]);
     }
     const count=s.kind.length;
     const p=new Float32Array(s.p), n=new Float32Array(s.n), kind=new Uint8Array(s.kind), face=new Uint16Array(s.face), order=new Float32Array(count), part=new Int16Array(count);
-    for(let i=0;i&lt;count;i++) {
+    for(let i=0;i<count;i++) {
       const x=p[i*3],y=p[i*3+1],z=p[i*3+2];
       if(kind[i]===BAND) order[i]=Math.abs(Math.atan2(Math.sin(Math.atan2(y,x)+Math.PI/2),Math.cos(Math.atan2(y,x)+Math.PI/2)))/Math.PI;
       else if(kind[i]===PRONG) order[i]=1+(y-R)/(.45)*.25;
@@ -185,7 +185,7 @@
   function makeParticles() {
     const r=rng(13), count=1900;
     sparks=new Array(count);
-    for(let i=0;i&lt;count;i++) {
+    for(let i=0;i<count;i++) {
       const vi=Math.floor(r()*geometry.count), a=r()*TAU, speed=.4+.6*r(), up=.5+.9*r();
       sparks[i]={vi,born:DRAW_START+geometry.order[vi]/geometry.maxOrder*(DRAW_END-DRAW_START),life:.9+.9*r(),a,speed,up,kind:r()};
     }
@@ -196,7 +196,7 @@
     const rb=rng(14);
     burstSeeds=Array.from({length:700},()=>({a:rb()*TAU,r:rb(),z:(rb()-.5)*.05-.4,phase:rb()*TAU,kind:rb()}));
     const rh=rng(15);
-    haloSeeds=Array.from({length:900},()=>({a:rh()*TAU,q:rh(),phase:rh()*TAU,orbit:rh()&lt;.5?0:1}));
+    haloSeeds=Array.from({length:900},()=>({a:rh()*TAU,q:rh(),phase:rh()*TAU,orbit:rh()<.5?0:1}));
   }
 
   const eye=[0,.85,4.7], target=[0,.22,0];
@@ -218,11 +218,11 @@
     const cx=dx*right[0]+dy*right[1]+dz*right[2];
     const cy=dx*up[0]+dy*up[1]+dz*up[2];
     const cz=dx*fwd[0]+dy*fwd[1]+dz*fwd[2];
-    if(cz&lt;=.2)return null;
+    if(cz<=.2)return null;
     const sx=(.5+cx/cz*1.45)*cols;
     const sy=(.5-cy/cz*1.45*aspect)*rows;
     const ix=sx|0,iy=sy|0;
-    if(ix&lt;0||ix&gt;=cols||iy&lt;0||iy&gt;=rows)return null;
+    if(ix<0||ix>=cols||iy<0||iy>=rows)return null;
     return {idx:iy*cols+ix,depth:cz,x:ix,y:iy};
   }
 
@@ -237,10 +237,10 @@
   }
 
   function particle(x,y,z,bright,glyph,colorTag,depthBias=0) {
-    const q=project(x,y,z); if(!q||bright&lt;=.02)return;
+    const q=project(x,y,z); if(!q||bright<=.02)return;
     const i=q.idx;
-    if(gridPart[i]&gt;=0 &amp;&amp; gridDepth[i]+depthBias&lt;q.depth)return;
-    if(q.depth+depthBias&gt;=particleDepth[i])return;
+    if(gridPart[i]>=0 && gridDepth[i]+depthBias<q.depth)return;
+    if(q.depth+depthBias>=particleDepth[i])return;
     particleDepth[i]=q.depth+depthBias;
     gridPart[i]=-2; gridLum[i]=clamp(bright,0,1); gridTag[i]=colorTag;
     gridGlyph[i]=GLYPH_MAP.get(glyph)||GLYPH_MAP.get('.')||1;
@@ -259,9 +259,9 @@
     let glintCount=0;
 
     // Opaque point-cloud body with a real per-cell depth buffer.
-    for(let i=0;i&lt;geometry.count;i++) {
+    for(let i=0;i<geometry.count;i++) {
       const k=smooth((head-geometry.order[i])/.06);
-      if(k&lt;.96)continue;
+      if(k<.96)continue;
       const pi=i*3;
       const pos=rotatePoint(geometry.p[pi],geometry.p[pi+1],geometry.p[pi+2],yaw,pitch);
       const no=rotateNormal(geometry.n[pi],geometry.n[pi+1],geometry.n[pi+2],yaw,pitch);
@@ -271,19 +271,19 @@
       const spec=Math.pow(Math.max(0,dot(no,halfK)),30)+.9*Math.pow(Math.max(0,dot(no,halfR)),24);
       const metal=kind!==GEM;
       let shade=metal?.5+.35*diffuse+.9*spec:.8+.2*diffuse+1.4*spec;
-      if(t&gt;DRAW_END&amp;&amp;t&lt;DRAW_END+.45)shade*=flash;
+      if(t>DRAW_END&&t<DRAW_END+.45)shade*=flash;
       let tag=kind;
-      if(!metal&amp;&amp;spec&gt;.18) { const f=(Math.floor(t*7+geometry.face[i])%3); tag=f===0?GLINT:f===1?FIRE_P:FIRE_B; glintCount++; }
-      else if(metal&amp;&amp;spec&gt;.5) { tag=GLINT; glintCount++; }
+      if(!metal&&spec>.18) { const f=(Math.floor(t*7+geometry.face[i])%3); tag=f===0?GLINT:f===1?FIRE_P:FIRE_B; glintCount++; }
+      else if(metal&&spec>.5) { tag=GLINT; glintCount++; }
       const idx=q.idx;
-      if(q.depth&lt;gridDepth[idx]) {
+      if(q.depth<gridDepth[idx]) {
         gridDepth[idx]=q.depth; gridLum[idx]=clamp(shade,.12,1.4); gridPart[idx]=geometry.part[i]; gridTag[idx]=tag;
       }
     }
 
     // Soft floor reflection under the metal shank.
-    for(let i=0;i&lt;geometry.count;i+=5) {
-      const k=smooth((head-geometry.order[i])/.06); if(k&lt;.96)continue;
+    for(let i=0;i<geometry.count;i+=5) {
+      const k=smooth((head-geometry.order[i])/.06); if(k<.96)continue;
       if(geometry.kind[i]===GEM)continue;
       const pi=i*3;
       const p=rotatePoint(geometry.p[pi],geometry.p[pi+1],geometry.p[pi+2],yaw,pitch);
@@ -299,53 +299,53 @@
     for(const d of dustSeeds) {
       const a=d.a+t*(.3+.5*d.u), r=.9+.8*d.v, y=((d.w*2.4+t*.08)%2.4)-.8;
       const tw=(.25+.75*Math.pow(Math.max(0,Math.sin(t*(2+3*d.u)+d.a*6)),4))*dustOn;
-      particle(Math.cos(a)*r,y,Math.sin(a)*r*.7,tw,tw&gt;.7?'*':'.',DUST);
+      particle(Math.cos(a)*r,y,Math.sin(a)*r*.7,tw,tw>.7?'*':'.',DUST);
     }
 
     // The moving writing tip throws sparks with gravity.
     for(const s of sparks) {
-      const age=t-s.born; if(age&lt;=0||age&gt;=s.life)continue;
+      const age=t-s.born; if(age<=0||age>=s.life)continue;
       const pi=s.vi*3;
       const base=rotatePoint(geometry.p[pi],geometry.p[pi+1],geometry.p[pi+2],yaw,pitch);
       const vx=Math.cos(s.a)*s.speed,vz=Math.sin(s.a)*s.speed;
       const x=base[0]+vx*age, y=base[1]+s.up*age-1.1*age*age, z=base[2]+vz*age;
       const fade=Math.pow(Math.max(0,1-age/s.life),1.3)*(.6+.4*Math.sin(age*30+s.a));
-      particle(x,y,z,fade,fade&gt;.45?'*':'.',s.kind&gt;.7?FIRE_G:DUST);
+      particle(x,y,z,fade,fade>.45?'*':'.',s.kind>.7?FIRE_G:DUST);
     }
 
     // Expanding light ring when the last facets are written.
     const burstAge=t-DRAW_END-.1;
-    if(burstAge&gt;=0&amp;&amp;burstAge&lt;=2.2) {
+    if(burstAge>=0&&burstAge<=2.2) {
       const fade=Math.pow(Math.max(0,1-burstAge/2.2),1.5), radius=.85+2.4*(1-Math.exp(-burstAge*2));
       for(const b of burstSeeds) {
         const r=radius*(.97+.06*b.r), x=Math.cos(b.a)*r, y=.42+Math.sin(b.a)*r;
-        const tag=b.kind&lt;.25?FIRE_P:b.kind&lt;.45?FIRE_B:b.kind&lt;.6?FIRE_G:GLINT;
-        particle(x,y,b.z,fade*(.55+.45*Math.sin(t*8+b.phase)),b.kind&gt;.6?'*':'+',tag);
+        const tag=b.kind<.25?FIRE_P:b.kind<.45?FIRE_B:b.kind<.6?FIRE_G:GLINT;
+        particle(x,y,b.z,fade*(.55+.45*Math.sin(t*8+b.phase)),b.kind>.6?'*':'+',tag);
       }
     }
 
     // Two fine, tilted particle orbits around the completed ring.
     const haloOn=smooth((t-DRAW_END-.3)/1.5);
-    if(haloOn&gt;0) for(const h of haloSeeds) {
+    if(haloOn>0) for(const h of haloSeeds) {
       const tilt=h.orbit===0?.55:-.55, a=h.a+t*(h.orbit===0?.9:-.7);
       const x0=Math.cos(a)*1.05,y0=Math.sin(a)*.32,z0=Math.sin(a)*.95;
       const x=x0*Math.cos(tilt)-y0*Math.sin(tilt), y=x0*Math.sin(tilt)+y0*Math.cos(tilt)+.42;
       const headGlow=(h.q*37+t*1.3)%1;
       const glow=haloOn*(.15+.85*Math.max(0,1-headGlow*3))*(.6+.4*Math.sin(t*6+h.phase));
-      particle(x,y,z0,glow,h.q&gt;.5?'.':'*',h.q&gt;.5?DUST:FIRE_B);
+      particle(x,y,z0,glow,h.q>.5?'.':'*',h.q>.5?DUST:FIRE_B);
     }
 
     // Turn the silhouette and facet boundaries into ASCII contours.
     let visibleCount=0;
     const edgeX=new Int8Array(cols*rows),edgeY=new Int8Array(cols*rows),edge=new Uint8Array(cols*rows);
-    for(let y=0;y&lt;rows;y++) for(let x=0;x&lt;cols;x++) {
+    for(let y=0;y<rows;y++) for(let x=0;x<cols;x++) {
       const i=y*cols+x, part=gridPart[i];
-      if(part&lt;0)continue;
+      if(part<0)continue;
       let gx=0,gy=0,isEdge=false;
-      for(let dy=-1;dy&lt;=1;dy++)for(let dx=-1;dx&lt;=1;dx++) {
-        if(dx===0&amp;&amp;dy===0)continue;
-        const xx=x+dx,yy=y+dy,ni=(xx&lt;0||xx&gt;=cols||yy&lt;0||yy&gt;=rows)?-1:gridPart[yy*cols+xx];
-        if(ni&lt;0||(ni!==part&amp;&amp;gridDepth[yy*cols+xx]&gt;gridDepth[i]+.02)) {gx+=dx;gy+=dy;if(dx===0||dy===0)isEdge=true;}
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++) {
+        if(dx===0&&dy===0)continue;
+        const xx=x+dx,yy=y+dy,ni=(xx<0||xx>=cols||yy<0||yy>=rows)?-1:gridPart[yy*cols+xx];
+        if(ni<0||(ni!==part&&gridDepth[yy*cols+xx]>gridDepth[i]+.02)) {gx+=dx;gy+=dy;if(dx===0||dy===0)isEdge=true;}
       }
       if(isEdge) {edge[i]=1;edgeX[i]=gx;edgeY[i]=gy;}
     }
@@ -354,16 +354,16 @@
     frameCtx.clearRect(0,0,cssW,cssH);
     frameCtx.textAlign='center'; frameCtx.textBaseline='middle'; frameCtx.font=`${FONT_PX}px Consolas, "Courier New", monospace`;
     frameCtx.shadowBlur=0;
-    for(let y=0;y&lt;rows;y++)for(let x=0;x&lt;cols;x++) {
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++) {
       const i=y*cols+x,tag=gridTag[i];
       if(gridPart[i]===-1)continue;
       const lum=clamp(gridLum[i],0,1.2);
       let ch;
-      if(gridPart[i]===-2) ch=tag===FIRE_G?'*':lum&gt;.68?' + ':' .';
-      else if(tag&gt;=GLINT&amp;&amp;tag&lt;=FIRE_G)ch='*';
+      if(gridPart[i]===-2) ch=tag===FIRE_G?'*':lum>.68?' + ':' .';
+      else if(tag>=GLINT&&tag<=FIRE_G)ch='*';
       else if(edge[i]) {
         const gx=edgeX[i],gy=edgeY[i],ax=Math.abs(gx),ay=Math.abs(gy);
-        ch=ax&gt;2*ay?'|':ay&gt;2*ax?(gy&gt;0?'-':'_'):(gx*gy&gt;0?'/':'\\');
+        ch=ax>2*ay?'|':ay>2*ax?(gy>0?'-':'_'):(gx*gy>0?'/':'\\');
       } else { 
         const level=clamp(Math.floor(lum*3.2),0,3),h=(y*7919+x*104729)%9973,pool=POOLS[level];
         ch=pool[(h+Math.floor(t*4+h%11))%pool.length];
@@ -372,7 +372,7 @@
       frameCtx.globalAlpha=gridPart[i]===-2?clamp(lum,0,1)*.86:clamp(lum,.12,1);
       frameCtx.fillStyle=color;
       frameCtx.fillText(ch,x*CELL_W+CELL_W/2,y*CELL_H+CELL_H/2);
-      if(gridPart[i]&gt;=0)visibleCount++;
+      if(gridPart[i]>=0)visibleCount++;
     }
     frameCtx.globalAlpha=1; frameCtx.globalCompositeOperation='source-over';
     return {yaw,glintCount,visibleCount};
@@ -422,7 +422,7 @@
     paused=v;
     pauseBtn.setAttribute('aria-label',paused?'Resume animation':'Pause animation');
     pauseBtn.title=paused?'Pause (Space)':'Resume (Space)';
-    pauseIcon.innerHTML=paused?'&lt;path d="m9 5 10 7-10 7V5Z"/&gt;':'&lt;path d="M8 5v14M16 5v14"/&gt;';
+    pauseIcon.innerHTML=paused?'<path d="m9 5 10 7-10 7V5Z"/>':'<path d="M8 5v14M16 5v14"/>';
     if(!paused)lastStamp=0;showToast(paused?'Paused':'Resumed');
   }
   function restart() { elapsed=0;manualYaw=0;manualPitch=0;clearTrail();render(0);lastStamp=0;showToast('Animation restarted'); }
@@ -434,11 +434,11 @@
   function tick(stamp) {
     requestAnimationFrame(tick);
     if(!lastStamp)lastStamp=stamp;
-    if(stamp-lastRender&lt;32)return;
+    if(stamp-lastRender<32)return;
     const dt=Math.min((stamp-lastStamp)/1000,.06);lastStamp=stamp;lastRender=stamp;
     if(!paused) {
       elapsed+=dt;
-      if(elapsed&gt;=LOOP){elapsed=0;clearTrail();}
+      if(elapsed>=LOOP){elapsed=0;clearTrail();}
       render(elapsed);
     }
   }
@@ -453,12 +453,12 @@
   canvas.addEventListener('dblclick',fullscreen);
   window.addEventListener('resize',()=>{resize();render(elapsed);});
   window.addEventListener('keydown',e=>{
-    if(e.target&amp;&amp;['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+    if(e.target&&['INPUT','TEXTAREA'].includes(e.target.tagName))return;
     if(e.code==='Space'){e.preventDefault();setPaused(!paused);}else if(e.key.toLowerCase()==='r')restart();else if(e.key.toLowerCase()==='s')save();else if(e.key.toLowerCase()==='f')fullscreen();
   });
 
   geometry=makeGeometry();makeParticles();resize();render(0);requestAnimationFrame(tick);
 })();
-&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;
+</script>
+</body>
+</html>
