@@ -1,0 +1,34 @@
+name: Import archive releases
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract uploaded archive
+        run: |
+          set -e
+          unzip -q diamond-ring-optics-versions-v9-to-v13.zip -d /tmp/diamond-archive
+          base=/tmp/diamond-archive/diamond-ring-optics-master
+          mkdir -p releases/v09 releases/v10 releases/v11 releases/v12 releases/v13 packages docs
+          cp "$base/releases/diamond_ring_spectral_studio_v9.html" releases/v09/
+          cp "$base/releases/diamond_ring_spectral_studio_v10.html" releases/v10/
+          cp "$base/releases/diamond_ring_spectral_studio_v11.html" releases/v11/diamond_ring_spectral_studio_v11_expanded.html
+          cp "$base/releases/diamond_ring_spectral_studio_v12.html" releases/v12/
+          cp "$base/releases/diamond_ring_spectral_studio_v13.html" releases/v13/
+          cp "$base/packages/"*.zip packages/
+          cp "$base/README_FA.md" README_FA.md
+          cp "$base/README_V13_FA.md" docs/README_V13_FA.md
+          cp "$base/CONTENTS.txt" docs/archive-contents-v9-v13.txt
+          cp "$base/releases/diamond_ring_spectral_studio_v13.html" index.html
+      - name: Commit imported files
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README_FA.md index.html releases/v09 releases/v10 releases/v11 releases/v12 releases/v13 packages docs
+          git commit -m "Import original V9-V13 HTML releases and packages"
+          git push
