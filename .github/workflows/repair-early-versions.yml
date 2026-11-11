@@ -1,0 +1,20 @@
+name: Repair early HTML snapshots
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode escaped HTML source
+        run: |
+          python -c 'from pathlib import Path; from html import unescape; names=["releases/v01/diamond_ring.html","releases/v02/diamond_ring_advanced_v2.html","releases/v03/diamond_ring_reference_v3.html"]; [(lambda p: p.write_text(unescape(p.read_text(encoding="utf-8")), encoding="utf-8"))(Path(n)) for n in names]'
+      - name: Commit repaired snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+alirez930@users.noreply.github.com"
+          git add releases/v01/diamond_ring.html releases/v02/diamond_ring_advanced_v2.html releases/v03/diamond_ring_reference_v3.html
+          git commit -m "Restore raw HTML source for V01-V03"
+          git push
